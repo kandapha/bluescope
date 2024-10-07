@@ -27,6 +27,7 @@ cursor.execute("""
             food_selected text(100))
 """)
 
+
 position_list = ['Admin','Architect','Associate director','Cad​ options','Draft man','Interior designer',
                     'Junior interior','Landscape','Production','Other...']
 food_list = ['Meat','Pork']
@@ -182,6 +183,7 @@ def import_data(uploaded_file):
     st.success('Import Registration Data to SQLite database succesful')
 
 # ----------------------------------------------
+import_data(import_regis.xlsx)    
 
 tab1, tab2, tab3 = st.tabs(["Registration Form | ", "Regis Information | ", "File Management"])
 
