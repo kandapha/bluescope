@@ -182,8 +182,7 @@ def import_data(uploaded_file):
 
     st.success('Import Registration Data to SQLite database succesful')
 
-# ----------------------------------------------
-import_data("import_regis.xlsx")    
+# ----------------------------------------------  
 
 tab1, tab2, tab3 = st.tabs(["Registration Form | ", "Regis Information | ", "File Management"])
 
