@@ -1,5 +1,3 @@
-import os
-os.system('pip install openpyxl')
 import streamlit as st
 import sqlite3
 import pandas as pd
