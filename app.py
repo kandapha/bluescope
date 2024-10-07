@@ -15,6 +15,17 @@ with cent_co:
 # connect to SQLite
 conn = sqlite3.connect('regis.db', check_same_thread=True)
 cursor = conn.cursor()
+cursor.execute("""
+    create table if not exists registrations(
+            No number(5),
+            fname text(100), 
+            lname text(100), 
+            phone text(10), 
+            email text(40),
+            position text(100), 
+            text_food_allergy text(100),
+            food_selected text(100))
+""")
 
 position_list = ['Admin','Architect','Associate director','Cad​ options','Draft man','Interior designer',
                     'Junior interior','Landscape','Production','Other...']
