@@ -8,7 +8,7 @@ from streamlit_js_eval import streamlit_js_eval
 #st.logo('logo.png')
 left_co, cent_co,last_co = st.columns(3)
 with cent_co:
-    st.image('images/Picture_2.png', width=200)
+    st.image('Picture_2.png', width=200)
 #html_code = """<h1 style="color:blue;">BlueScope Back to Work Party</h1>"""
 #st.markdown(html_code, unsafe_allow_html=True)
 
@@ -37,7 +37,7 @@ def set_bg_hack(main_bg):
          unsafe_allow_html=True
      )
 
-side_bg = 'images/Picture_BG.png'
+side_bg = 'Picture_BG.png'
 set_bg_hack(side_bg)
 
 
