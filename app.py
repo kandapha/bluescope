@@ -56,6 +56,7 @@ def formCreation(df):
     emp_id = 0
     for idx, i in enumerate(df['fname']):
         if i == s_name :
+            s_name = df['fname'][idx]
             emp_id = idx
             lname = df['lname'][idx]
             phone = df['phone'][idx]
