@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 import openpyxl
 import base64
-from streamlit_js_eval import streamlit_js_eval
+import os.path
 
 #st.logo('logo.png')
 left_co, cent_co,last_co = st.columns(3)
@@ -12,21 +12,9 @@ with cent_co:
 #html_code = """<h1 style="color:blue;">BlueScope Back to Work Party</h1>"""
 #st.markdown(html_code, unsafe_allow_html=True)
 
-# connect to SQLite
-conn = sqlite3.connect('regis.db', check_same_thread=True)
-cursor = conn.cursor()
-cursor.execute("""
-    create table if not exists registrations(
-            No number(5),
-            fname text(100), 
-            lname text(100), 
-            phone text(10), 
-            email text(40),
-            position text(100), 
-            text_food_allergy text(100),
-            food_selected text(100))
-""")
-
+# connect to original data
+data = pd.read_excel('import_regis.xlsx')
+output_path = './output.xlsx'
 
 position_list = ['Admin','Architect','Associate director','Cad​ options','Draft man','Interior designer',
                     'Junior interior','Landscape','Production','Other...']
@@ -104,19 +92,8 @@ def formCreation(df):
         food_selected = st.radio("Select your meal", food_list, index=food_selected_idx)
         submitted = st.form_submit_button("Submit")
 
-    if submitted == True and (s_name == 'Add new...' or s_name == ''): #emp_id = index
-        print('add new -------------')
-        print(s_name)
-        print(emp_id)
-        add_regis_data(emp_id, fname, lname, phone, email, position, text_food_allergy, food_selected)
-    elif submitted == True:
-        #updateRegis(emp_id, fname, lname, phone, email, position, text_food_allergy, food_selected)
-        print('update -------------')
-        print(s_name)
-        print(emp_id)
-        print(fname)
-        print(food_selected)
-        update_regis_data(emp_id, fname, lname, phone, email, position, text_food_allergy, food_selected)
+    if submitted == True:
+        regis_data(df, emp_id, fname, lname, phone, email, position, text_food_allergy, food_selected)
 
     css="""
     <style>
@@ -127,60 +104,26 @@ def formCreation(df):
     """
     st.write(css, unsafe_allow_html=True)
 
-def update_regis_data(emp_id,a,b,c,d,e,f,g):
-    #cursor.execute("Insert into registrations values (?,?,?,?,?,?,?,?)" , (emp_id,a,b,c,d,e,f,g))
-    #conn.commit()
-    
-    css="""
-    <style>
-        [data-testid="stAlert"] {
-            background: White;
-            border-radius: 5px;
-        }
-    </style>
-    """
+def regis_data(df, emp_id, fname, lname, phone, email, position, text_food_allergy, food_selected):
+    print(emp_id)
+    print(fname)
+    df.loc[emp_id, "No"] = emp_id
+    df.loc[emp_id, "fname"] = fname
+    df.loc[emp_id, "lname"] = lname
+    df.loc[emp_id, "phone"] = phone
+    df.loc[emp_id, "email"] = email
+    df.loc[emp_id, "position"] = position
+    df.loc[emp_id, "text_food_allergy"] = text_food_allergy
+    df.loc[emp_id, "food_selected"] = food_selected
 
-    st.warning('Your registration has been updated')
-    st.write(css, unsafe_allow_html=True)
-    streamlit_js_eval(js_expressions="parent.window.location.reload()")
-
-def add_regis_data(emp_id,a,b,c,d,e,f,g):
-
-    cursor.execute("Insert into registrations values (?,?,?,?,?,?,?,?)" , (emp_id,a,b,c,d,e,f,g))
-    conn.commit()
-    
-    css="""
-    <style>
-        [data-testid="stAlert"] {
-            background: White;
-            border-radius: 5px;
-        }
-    </style>
-    """
-
-    st.success('Your registration has been added successful!')
-    st.write(css, unsafe_allow_html=True)
-    streamlit_js_eval(js_expressions="parent.window.location.reload()")
+    df.to_excel("output.xlsx") 
+    st.cache_data.clear()
+    st.rerun()
 
 def import_data(uploaded_file):
-    cursor.execute("""
-        create table if not exists registrations(
-                No number(5),
-                fname text(100), 
-                lname text(100), 
-                phone text(10), 
-                email text(40),
-                position text(100), 
-                text_food_allergy text(100),
-                food_selected text(100))
-    """)
-    cursor.execute('DROP TABLE IF EXISTS registrations;')
-
     import_df = pd.read_excel(uploaded_file)
-    st.write(import_df)
-    import_df.to_sql(name='registrations', con=conn, if_exists='replace', index=False)
-
     st.success('Import Registration Data to SQLite database succesful')
+    import_df.to_excel("output.xlsx") 
 
 # ----------------------------------------------  
 
@@ -199,15 +142,18 @@ tab3.markdown(tab3_subhader, unsafe_allow_html=True)
 
 
 with tab1:
-    query = "select * from registrations order by fname"
-    df = pd.read_sql(query, conn)    
+    if os.path.exists(output_path):
+        df = pd.read_excel(output_path, index_col=0)
+    else:
+        df = pd.read_excel('import_regis.xlsx')
     formCreation(df)
 
 with tab2:
-    query = "select * from registrations"
-    df = pd.read_sql(query, conn)
-    #print(df.head())
-    st.write(df)
+    if os.path.exists(output_path):
+        df = pd.read_excel(output_path, index_col=0)
+    else:
+        df = pd.read_excel('import_regis.xlsx', index_col=0)
+    st.dataframe(df)
 
 
 with tab3:
@@ -217,11 +163,10 @@ with tab3:
             import_data(uploaded_file)    
 
     with st.popover("Export data"):
-        if st.button("Download Excel file"):  
-            query = "select * from registrations"
-            df = pd.read_sql(query, conn)
-            df.to_excel("export_regis.xlsx")        
-            st.success('Download Successful')    
+        if os.path.exists(output_path):
+            export_df = pd.read_excel('output.xlsx', index_col=0)
+            if st.button("Download Excel file"): 
+                export_df.to_excel("output_registration_data_with_event_name.xlsx") 
 
 css = '''
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Play">
