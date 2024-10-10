@@ -106,6 +106,7 @@ def formCreation(df):
     st.write(css, unsafe_allow_html=True)
 
 def regis_data(df, emp_id, fname, lname, phone, email, position, text_food_allergy, food_selected):
+    print('------------------')
     print(emp_id)
     print(fname)
     df.loc[emp_id, "No"] = emp_id
@@ -118,7 +119,7 @@ def regis_data(df, emp_id, fname, lname, phone, email, position, text_food_aller
     df.loc[emp_id, "food_selected"] = food_selected
 
     df.to_excel("output.xlsx") 
-    st.cache_data.clear()
+    #st.cache_data.clear()
     st.rerun()
 
 def import_data(uploaded_file):
