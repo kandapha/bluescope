@@ -251,6 +251,7 @@ css = '''
     font-family: "Jost", sans-serif;
     color: white;
     }
+    .stAppHeader {visibility: hidden;}
 </style>
 '''
 
