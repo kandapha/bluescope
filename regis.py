@@ -2,9 +2,13 @@ import streamlit as st
 import pandas as pd
 import base64
 from datetime import datetime
+import os
 
 logo_image = 'images/Picture_2.png'
 bg_image = 'images/Picture_BG_resize.png'
+
+new_regis_path = os.path.join("tmp", "new_registrations.xlsx")
+first_regis_path = "registrations.xlsx"
 
 # Initialize variables for form inputs
 position_list = ['Admin','Architect','Associate director','Cad​ options','Draft man','Interior designer',
@@ -27,15 +31,25 @@ def load_data(file):
 def load_and_save_data(file):
     data = pd.read_excel(file)
     data['timestamp'] = pd.NaT
-    data.to_excel("new_registrations.xlsx", index=False)
+    data.to_excel(new_regis_path, index=False)
     return data
 
 # Function to save data to Excel
 def save_data(data, file):
     data.to_excel(file, index=False)
     
+# File deletion function
+def delete_file(file_path):
+    try:
+        os.remove(file_path)
+        st.success(f"Deleted: {file_path}")
+    except FileNotFoundError:
+        st.error(f"File not found: {file_path}")
+    except Exception as e:
+        st.error(f"Error: {e}")   
+
 try:
-    existing_data = load_data("registrations.xlsx")
+    existing_data = load_data(first_regis_path)
     unique_names = existing_data[['fname', 'lname']].drop_duplicates()
     names = list(unique_names.itertuples(index=False, name=None))
 except FileNotFoundError:
@@ -74,14 +88,15 @@ tab1, tab2 = st.tabs(["Registration Form | ", "Regis Information"])
 
 # Tab 1: Registration Form
 with tab1:
-
+    if "refresh" not in st.session_state:
+        st.session_state.refresh = False
     # Title of the app
     tab1_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">ลงทะเบียนเข้าร่วมงาน</p>'
     tab1.markdown(tab1_subhader, unsafe_allow_html=True)
     existing_data = []
     # Load existing data if the file exists
     try:
-        existing_data = load_data("new_registrations.xlsx")
+        existing_data = load_data(new_regis_path)
         #names = existing_data["fname"].unique().tolist()
         unique_names = existing_data[['fname', 'lname']].drop_duplicates()
         unique_names_list = list(unique_names.itertuples(index=False, name=None))
@@ -183,9 +198,10 @@ with tab1:
             existing_data['text_food_allergy'] = existing_data['text_food_allergy'].fillna('-')
 
         # Save updated data to Excel
-        save_data(existing_data, "new_registrations.xlsx")
+        save_data(existing_data, new_regis_path)
         st.success("Registration successful!")
-        st.experimental_rerun()
+        if st.button("Refresh App"):
+            st.session_state.refresh = not st.session_state.refresh
 
     css="""
     <style>
@@ -203,14 +219,28 @@ with tab2:
     tab2_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลผู้ลงทะเบียน</p>'
     tab2.markdown(tab2_subhader, unsafe_allow_html=True)    
 
+    st.markdown(
+        """
+        <style>
+        .custom-divider {
+            border-top: 1px solid rgb(128, 215, 255);
+            margin: 20px 0;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # Check if the Excel file exists
     try:
-        df = load_data("new_registrations.xlsx")
+        df = load_data(new_regis_path)
 
         existing_txt = '<p style="color:White;">Existing Registrations:</p>'
         st.markdown(existing_txt, unsafe_allow_html=True)
 
         st.dataframe(df)
+
+        st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
 
         # Select box to choose a registered person
         selected_name = st.selectbox("Select a registered person", df["fname"].unique())
@@ -225,23 +255,50 @@ with tab2:
         st.warning("No registrations found. Please register first.")
 
     st.empty()
+
     # -------------------------
+    
+    st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
+
     detail_txt = '<p style="color:White;">File Management ------------ </p>'
     st.markdown(detail_txt, unsafe_allow_html=True)   
 
+    # Custom CSS for setting the expander background to white
+    css="""
+    <style>
+        [data-testid="stExpander"] {
+            background: White;
+            border-radius: 8px;
+        }
+    </style>
+    """
+    
+    st.write(css, unsafe_allow_html=True)
+
     with st.expander("Download File"):
         # Download link for the updated registrations
-        if st.button("Download Registration Data"):
-            if 'updated_data' in locals():
-                #updated_data.to_excel("new_registrations.xlsx", index=False)
-                st.success("Download link available.")
-            else:
-                st.warning("No data available to download.")
+        try:
+            df = load_data(new_regis_path)
+            export_file_name = st.text_input('Enter filename: (export data will be in export_data folder)', value="export_new_event.xlsx")
+            if st.button("Download Registration Data"):
+                if isinstance(df, pd.DataFrame) and not df.empty:
+                    export_path = os.path.join("export_data", export_file_name)
+                    save_data(df,export_path)
+                    st.success("Download successful!")
+                else:
+                    st.warning("No data available to download.")
+        except FileNotFoundError:     
+            st.warning("No registrations found. Please register first.")
 
+    with st.expander("Upload File"):
          # Upload new registrations data
         uploaded_file = st.file_uploader("Upload file for the new event")
         if uploaded_file is not None:
             load_and_save_data(uploaded_file)
+    
+    with st.expander("Delete All Data"):
+        if st.button("Delete Data"):
+            delete_file(new_regis_path)
 
 css = '''
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jost">
