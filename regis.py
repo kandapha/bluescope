@@ -1,14 +1,12 @@
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 import pandas as pd
-import base64
 from datetime import datetime
-import os
+import base64
 
 logo_image = 'images/Picture_2.png'
 bg_image = 'images/Picture_BG_resize.png'
-
-new_regis_path = os.path.join("tmp", "new_registrations.xlsx")
-first_regis_path = "registrations.xlsx"
 
 # Initialize variables for form inputs
 position_list = ['Admin','Architect','Associate director','Cad​ options','Draft man','Interior designer',
@@ -22,39 +20,7 @@ position_idx = 0
 is_allergy = False
 text_food_allergy = ""
 food_selected_idx = 0
-
-# Function to load existing data from Excel
-def load_data(file):
-    data = pd.read_excel(file)
-    return data
-
-def load_and_save_data(file):
-    data = pd.read_excel(file)
-    data['timestamp'] = pd.NaT
-    data.to_excel(new_regis_path, index=False)
-    return data
-
-# Function to save data to Excel
-def save_data(data, file):
-    data.to_excel(file, index=False)
-    
-# File deletion function
-def delete_file(file_path):
-    try:
-        os.remove(file_path)
-        st.success(f"Deleted: {file_path}")
-    except FileNotFoundError:
-        st.error(f"File not found: {file_path}")
-    except Exception as e:
-        st.error(f"Error: {e}")   
-
-try:
-    existing_data = load_data(first_regis_path)
-    unique_names = existing_data[['fname', 'lname']].drop_duplicates()
-    names = list(unique_names.itertuples(index=False, name=None))
-except FileNotFoundError:
-    names = []
-
+update_row = 0
 
 #st.logo('logo.png')
 left_co, cent_co,last_co = st.columns(3)
@@ -80,32 +46,67 @@ def set_bg_hack(main_bg):
 
 set_bg_hack(bg_image)
 
-# -----------------------------------------------
+# Authenticate and connect to Google Sheets
+def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):
+    scope = ["https://spreadsheets.google.com/feeds", 
+             'https://www.googleapis.com/auth/spreadsheets',
+             "https://www.googleapis.com/auth/drive.file", 
+             "https://www.googleapis.com/auth/drive"]
+    
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scope)
+    client = gspread.authorize(credentials)
+    spreadsheet = client.open(spreadsheet_name)  
+    return spreadsheet.worksheet(sheet_name)  # Access specific sheet by name
+
+# Google Sheet credentials and details
+SPREADSHEET_NAME = 'bluescope_registration_file'
+SHEET_NAME = 'Sheet1'
+CREDENTIALS_FILE = './credentials.json'
+
+# Connect to the Google Sheet
+sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
+
+
+
+# Read Data from Google Sheets
+def read_data():
+    data = sheet_by_name.get_all_records()  # Get all records from Google Sheet
+    return pd.DataFrame(data)
+
+# Add Data to Google Sheets
+def add_data(regis_data):
+    sheet_by_name.append_row(regis_data)  # Append the row to the Google Sheet
+
+def update_data(update_row,regis_data):
+    sheet_by_name.update_cell(update_row, 1, regis_data[0])
+    sheet_by_name.update_cell(update_row, 2, regis_data[1])
+    sheet_by_name.update_cell(update_row, 3, regis_data[2])
+    sheet_by_name.update_cell(update_row, 4, regis_data[3])
+    sheet_by_name.update_cell(update_row, 5, regis_data[4])
+    sheet_by_name.update_cell(update_row, 6, regis_data[5])
+    sheet_by_name.update_cell(update_row, 7, regis_data[6])
+    sheet_by_name.update_cell(update_row, 8, regis_data[7])
+    sheet_by_name.update_cell(update_row, 9, regis_data[8])
+
+def read_fullnames():
+    fnames = sheet_by_name.col_values(1)[1:]
+    lnames = sheet_by_name.col_values(2)[1:]
+    df = pd.DataFrame()
+    df['fnames'] = fnames
+    df['lnames'] = lnames
+    unique_names = df[['fnames', 'lnames']].drop_duplicates()
+    unique_names_list = list(unique_names.itertuples(index=False, name=None))
+    names_list = []
+    for i in unique_names_list:
+        names_list.append(' '.join(i)) 
+    return names_list
 
 # Create tabs
 tab1, tab2 = st.tabs(["Registration Form | ", "Regis Information"])
 
-
-# Tab 1: Registration Form
 with tab1:
-    if "refresh" not in st.session_state:
-        st.session_state.refresh = False
-    # Title of the app
     tab1_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">ลงทะเบียนเข้าร่วมงาน</p>'
     tab1.markdown(tab1_subhader, unsafe_allow_html=True)
-    existing_data = []
-    # Load existing data if the file exists
-    try:
-        existing_data = load_data(new_regis_path)
-        #names = existing_data["fname"].unique().tolist()
-        unique_names = existing_data[['fname', 'lname']].drop_duplicates()
-        unique_names_list = list(unique_names.itertuples(index=False, name=None))
-        names = []
-        for i in unique_names_list:
-            print(' '.join(i))
-            names.append(' '.join(i))        
-    except FileNotFoundError:
-        names = []
 
     # Select box to choose a registered person
     st.markdown(
@@ -119,36 +120,44 @@ with tab1:
         unsafe_allow_html=True
     )    
 
+    names = []
+    names = read_fullnames()
+    
     selected_name = st.selectbox("Select a registered person (optional)", [""] + sorted(names))
+
+    is_update = False
+    if selected_name:
+        words = selected_name.split()
+        selected_fname = sheet_by_name.find(words[0])
+        selected_lname = sheet_by_name.find(words[1])
+        
+        if selected_fname.row == selected_lname.row:
+            is_update = True
+            update_row = selected_fname.row
+            fname = sheet_by_name.cell(update_row, 1).value
+            lname = sheet_by_name.cell(update_row, 2).value
+            phone = sheet_by_name.cell(update_row, 3).value
+            email = sheet_by_name.cell(update_row, 4).value
+            position = sheet_by_name.cell(update_row, 5).value
+            try:
+                position_idx = position_list.index(position)
+            except ValueError:
+                position_idx = 0
+            is_allergy = sheet_by_name.cell(update_row, 6).value
+            text_food_allergy = sheet_by_name.cell(update_row, 7).value
+            food_selected = sheet_by_name.cell(update_row, 8).value
+            try:
+                food_selected_idx = food_list.index(food_selected)
+            except ValueError:
+                food_selected_idx = 0
+    else:
+        is_update = False # add new   
 
     detail_txt = '<p style="color:White;">Details of selected person:</p>'
     st.markdown(detail_txt, unsafe_allow_html=True)
 
-    is_update = False
-    # If a name is selected, display the corresponding details
-    if selected_name:
-        words = selected_name.split()
-        matching_rows = unique_names[(unique_names["fname"] == words[0]) & (unique_names["lname"] == words[1])]
-        matching_indices = matching_rows.index.tolist()
-        if matching_indices:
-            is_update = True
-            emp_id = matching_indices[0]
-            fname = existing_data.loc[matching_indices[0]]['fname']
-            lname = existing_data.loc[matching_indices[0]]['lname']
-            phone = existing_data.loc[matching_indices[0]]['phone']
-            email = existing_data.loc[matching_indices[0]]['email']
-            position = existing_data.loc[matching_indices[0]]['position']
-            position_idx = position_list.index(position)
-            is_allergy = False if existing_data.loc[matching_indices[0]]['text_food_allergy'] in ['ไม่มี', 'ไม่แพ้', '-'] else True
-            text_food_allergy = existing_data.loc[matching_indices[0]]['text_food_allergy']
-            food_selected = existing_data.loc[matching_indices[0]]['food_selected']
-            food_selected_idx = food_list.index(food_selected)
-    else:
-        is_update = False
-        print('===============')
-
-    # Registration form fields
-    with st.form(key='registration_form', clear_on_submit=True):
+    # Assuming the sheet has columns: 'Name', 'Age', 'Email'
+    with st.form(key="data_form", clear_on_submit=True):
         fname = st.text_input('Enter your first name:', value=fname)
         lname = st.text_input('Enter your last name:', value=lname)
         phone = st.text_input('Enter your phone number:', value=phone)
@@ -157,52 +166,21 @@ with tab1:
         food_allergy = st.checkbox("Food Allergy", value=is_allergy)
         text_food_allergy = st.text_input('Enter your allergy:', value=text_food_allergy)
         food_selected = st.radio("Select your meal", food_list, index=food_selected_idx)
-        submit_button = st.form_submit_button("Registration")
 
-    # Create a new DataFrame to store registration data
-    if submit_button:
-      
-        if is_update :
-            # Create a new row with the form data and the current timestamp
-            print('update data')
-
-            if not text_food_allergy:
-                text_food_allergy = "-"
-            existing_data.loc[matching_indices[0], 'fname'] = fname
-            existing_data.loc[matching_indices[0], 'lname'] = lname
-            existing_data.loc[matching_indices[0], 'phone'] = phone
-            existing_data.loc[matching_indices[0], 'email'] = email
-            existing_data.loc[matching_indices[0], 'position'] = position
-            existing_data.loc[matching_indices[0], 'text_food_allergy'] = text_food_allergy
-            existing_data.loc[matching_indices[0], 'food_selected'] = food_selected
-            existing_data.loc[matching_indices[0], 'timestamp'] = datetime.now()
-        else:
-            print('new data')
-            if not text_food_allergy:
-                text_food_allergy = "-"
-            new_row = {
-                'No' : len(existing_data)+1 ,
-                'fname': fname,
-                'lname': lname,
-                'phone': phone,
-                'email': email,
-                'position': position,
-                'text_food_allergy': text_food_allergy,
-                'food_selected': food_selected,
-                'timestamp': datetime.now()  # Current timestamp
-            }              
-
-            # Append new data
-            new_data = pd.DataFrame.from_dict(new_row, orient='index')
-            existing_data = pd.concat([existing_data, new_data.T], ignore_index=True)
-            existing_data['text_food_allergy'] = existing_data['text_food_allergy'].fillna('-')
-
-        # Save updated data to Excel
-        save_data(existing_data, new_regis_path)
-        st.success("Registration successful!")
-        if st.button("Refresh App"):
-            st.session_state.refresh = not st.session_state.refresh
-
+        # Submit button inside the form
+        submitted = st.form_submit_button("Submit")
+        # Handle form submission
+        if submitted:
+            timestamp = datetime.now()
+            regis_data = [fname, lname, str(phone), email, position, food_allergy, text_food_allergy, food_selected, str(timestamp)]
+            if is_update and fname and lname :
+                update_data(update_row,regis_data)
+            else:
+                if fname and lname :  # Basic validation to check if required fields are filled
+                    add_data(regis_data)  # Append the row to the sheet
+                    st.success("Data added successfully!")
+                else:
+                    st.error("Please fill out the form correctly.")
     css="""
     <style>
         [data-testid="stForm"] {
@@ -212,93 +190,14 @@ with tab1:
     """
     
     st.write(css, unsafe_allow_html=True)
-    
-    
-# Tab 2: View Registrations
+
+
 with tab2:
-    tab2_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลผู้ลงทะเบียน</p>'
-    tab2.markdown(tab2_subhader, unsafe_allow_html=True)    
-
-    st.markdown(
-        """
-        <style>
-        .custom-divider {
-            border-top: 1px solid rgb(128, 215, 255);
-            margin: 20px 0;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Check if the Excel file exists
-    try:
-        df = load_data(new_regis_path)
-
-        existing_txt = '<p style="color:White;">Existing Registrations:</p>'
-        st.markdown(existing_txt, unsafe_allow_html=True)
-
-        st.dataframe(df)
-
-        st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
-
-        # Select box to choose a registered person
-        selected_name = st.selectbox("Select a registered person", df["fname"].unique())
-
-        # Display details of the selected person
-        selected_data = df[df["fname"] == selected_name]
-        detail_txt = '<p style="color:White;">Detail:</p>'
-        st.markdown(detail_txt, unsafe_allow_html=True)
-        st.dataframe(selected_data)
-
-    except FileNotFoundError:     
-        st.warning("No registrations found. Please register first.")
-
-    st.empty()
-
-    # -------------------------
-    
-    st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
-
-    detail_txt = '<p style="color:White;">File Management ------------ </p>'
-    st.markdown(detail_txt, unsafe_allow_html=True)   
-
-    # Custom CSS for setting the expander background to white
-    css="""
-    <style>
-        [data-testid="stExpander"] {
-            background: White;
-            border-radius: 8px;
-        }
-    </style>
-    """
-    
-    st.write(css, unsafe_allow_html=True)
-
-    with st.expander("Download File"):
-        # Download link for the updated registrations
-        try:
-            df = load_data(new_regis_path)
-            export_file_name = st.text_input('Enter filename: (export data will be in export_data folder)', value="export_new_event.xlsx")
-            if st.button("Download Registration Data"):
-                if isinstance(df, pd.DataFrame) and not df.empty:
-                    export_path = os.path.join("export_data", export_file_name)
-                    save_data(df,export_path)
-                    st.success("Download successful!")
-                else:
-                    st.warning("No data available to download.")
-        except FileNotFoundError:     
-            st.warning("No registrations found. Please register first.")
-
-    with st.expander("Upload File"):
-         # Upload new registrations data
-        uploaded_file = st.file_uploader("Upload file for the new event")
-        if uploaded_file is not None:
-            load_and_save_data(uploaded_file)
-    
-    with st.expander("Delete All Data"):
-        if st.button("Delete Data"):
-            delete_file(new_regis_path)
+    # Display data in the main view
+    tab2_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลการลงทะเบียนเข้าร่วมงาน</p>'
+    tab2.markdown(tab2_subhader, unsafe_allow_html=True)
+    df = read_data()
+    st.dataframe(df, width=800, height=400)   
 
 css = '''
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jost">
