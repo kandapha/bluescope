@@ -20,7 +20,7 @@ position_idx = 0
 #is_allergy = False
 #text_food_allergy = ""
 #food_selected_idx = 0
-update_row = 0
+found_row = 0
 
 #st.logo('logo.png')
 left_co, cent_co,last_co = st.columns(3)
@@ -75,7 +75,7 @@ def read_data():
 
 # Add Data to Google Sheets
 def add_data(regis_data):
-    sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
+    #sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
     sheet_by_name.append_row(regis_data)  # Append the row to the Google Sheet
 
 def update_data(update_row,regis_data):
@@ -130,28 +130,32 @@ with tab1:
     is_update = False
     if selected_name:
         words = selected_name.split()
-        selected_fname = sheet_by_name.find(words[0])
-        selected_lname = sheet_by_name.find(words[1])
-        
-        if selected_fname.row == selected_lname.row:
-            is_update = True
-            update_row = selected_fname.row
-            fname = sheet_by_name.cell(update_row, 1).value
-            lname = sheet_by_name.cell(update_row, 2).value
-            phone = sheet_by_name.cell(update_row, 3).value
-            email = sheet_by_name.cell(update_row, 4).value
-            position = sheet_by_name.cell(update_row, 5).value
-            try:
-                position_idx = position_list.index(position)
-            except ValueError:
-                position_idx = 0
-            #is_allergy = sheet_by_name.cell(update_row, 6).value
-            #text_food_allergy = sheet_by_name.cell(update_row, 7).value
-            #food_selected = sheet_by_name.cell(update_row, 8).value
-            #try:
-            #    food_selected_idx = food_list.index(food_selected)
-            #except ValueError:
-            #    food_selected_idx = 0
+
+
+        selected_user_fname = words[0]
+        selected_user_lname = words[1]
+        for found_cell in sheet_by_name.findall(selected_user_fname):
+            found_row = found_cell.row
+            found_lname = sheet_by_name.cell(found_row, 2).value
+            if selected_user_lname == found_lname:
+                # do
+                is_update = True
+                fname = sheet_by_name.cell(found_row, 1).value
+                lname = sheet_by_name.cell(found_row, 2).value
+                phone = sheet_by_name.cell(found_row, 3).value
+                email = sheet_by_name.cell(found_row, 4).value
+                position = sheet_by_name.cell(found_row, 5).value
+                try:
+                    position_idx = position_list.index(position)
+                except ValueError:
+                    position_idx = 0
+                #is_allergy = sheet_by_name.cell(update_row, 6).value
+                #text_food_allergy = sheet_by_name.cell(update_row, 7).value
+                #food_selected = sheet_by_name.cell(update_row, 8).value
+                #try:
+                #    food_selected_idx = food_list.index(food_selected)
+                #except ValueError:
+                #    food_selected_idx = 0
     else:
         is_update = False # add new   
 
@@ -177,7 +181,7 @@ with tab1:
             #regis_data = [fname, lname, str(phone), email, position, food_allergy, text_food_allergy, food_selected, str(timestamp)]
             regis_data = [fname, lname, str(phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
             if is_update and fname and lname :
-                update_data(update_row,regis_data)
+                update_data(found_row,regis_data)
             else:
                 if fname and lname :  # Basic validation to check if required fields are filled
                     add_data(regis_data)  # Append the row to the sheet
