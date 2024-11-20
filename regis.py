@@ -71,7 +71,8 @@ sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name
 # Read Data from Google Sheets
 def read_data():
     data = sheet_by_name.get_all_records()  # Get all records from Google Sheet
-    return pd.DataFrame(data)
+    df = pd.DataFrame(data, dtype=str)
+    return df
 
 # Add Data to Google Sheets
 def add_data(regis_data):
