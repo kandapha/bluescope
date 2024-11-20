@@ -9,17 +9,17 @@ logo_image = 'images/Picture_2.png'
 bg_image = 'images/Picture_BG_resize.png'
 
 # Initialize variables for form inputs
-position_list = ['Admin','Architect','Associate director','Cad​ options','Draft man','Interior designer',
-                    'Junior interior','Landscape','Production','Other...']
-food_list = ['Meat','Pork']
+position_list = ['Position','Admin','Architect','Associate director','Cad options','Draft man','Engineer','Interior',
+                    'Landscape','Production','Secretary','Other']
+#food_list = ['Meat','Pork']
 fname = ""
 lname = ""
 phone = ""
 email = ""
 position_idx = 0
-is_allergy = False
-text_food_allergy = ""
-food_selected_idx = 0
+#is_allergy = False
+#text_food_allergy = ""
+#food_selected_idx = 0
 update_row = 0
 
 #st.logo('logo.png')
@@ -75,6 +75,7 @@ def read_data():
 
 # Add Data to Google Sheets
 def add_data(regis_data):
+    sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
     sheet_by_name.append_row(regis_data)  # Append the row to the Google Sheet
 
 def update_data(update_row,regis_data):
@@ -83,10 +84,11 @@ def update_data(update_row,regis_data):
     sheet_by_name.update_cell(update_row, 3, regis_data[2])
     sheet_by_name.update_cell(update_row, 4, regis_data[3])
     sheet_by_name.update_cell(update_row, 5, regis_data[4])
+    #sheet_by_name.update_cell(update_row, 6, regis_data[5])
+    #sheet_by_name.update_cell(update_row, 7, regis_data[6])
+    #sheet_by_name.update_cell(update_row, 8, regis_data[7])
+    #sheet_by_name.update_cell(update_row, 9, regis_data[8])
     sheet_by_name.update_cell(update_row, 6, regis_data[5])
-    sheet_by_name.update_cell(update_row, 7, regis_data[6])
-    sheet_by_name.update_cell(update_row, 8, regis_data[7])
-    sheet_by_name.update_cell(update_row, 9, regis_data[8])
 
 def read_fullnames():
     fnames = sheet_by_name.col_values(1)[1:]
@@ -143,13 +145,13 @@ with tab1:
                 position_idx = position_list.index(position)
             except ValueError:
                 position_idx = 0
-            is_allergy = sheet_by_name.cell(update_row, 6).value
-            text_food_allergy = sheet_by_name.cell(update_row, 7).value
-            food_selected = sheet_by_name.cell(update_row, 8).value
-            try:
-                food_selected_idx = food_list.index(food_selected)
-            except ValueError:
-                food_selected_idx = 0
+            #is_allergy = sheet_by_name.cell(update_row, 6).value
+            #text_food_allergy = sheet_by_name.cell(update_row, 7).value
+            #food_selected = sheet_by_name.cell(update_row, 8).value
+            #try:
+            #    food_selected_idx = food_list.index(food_selected)
+            #except ValueError:
+            #    food_selected_idx = 0
     else:
         is_update = False # add new   
 
@@ -158,21 +160,22 @@ with tab1:
 
     # Assuming the sheet has columns: 'Name', 'Age', 'Email'
     with st.form(key="data_form", clear_on_submit=True):
-        fname = st.text_input('Enter your first name:', value=fname)
-        lname = st.text_input('Enter your last name:', value=lname)
-        phone = st.text_input('Enter your phone number:', value=phone)
-        email = st.text_input('Enter your email:', value=email)
+        fname = st.text_input('Enter your first name *', value=fname)
+        lname = st.text_input('Enter your last name *', value=lname)
+        phone = st.text_input('Enter your phone number', value=phone)
+        email = st.text_input('Enter your email', value=email)
         position = st.selectbox('Enter your position', position_list, index=position_idx)
-        food_allergy = st.checkbox("Food Allergy", value=is_allergy)
-        text_food_allergy = st.text_input('Enter your allergy:', value=text_food_allergy)
-        food_selected = st.radio("Select your meal", food_list, index=food_selected_idx)
+        #food_allergy = st.checkbox("Food Allergy", value=is_allergy)
+        #text_food_allergy = st.text_input('Enter your allergy:', value=text_food_allergy)
+        #food_selected = st.radio("Select your meal", food_list, index=food_selected_idx)
 
         # Submit button inside the form
         submitted = st.form_submit_button("Submit")
         # Handle form submission
         if submitted:
             timestamp = datetime.now()
-            regis_data = [fname, lname, str(phone), email, position, food_allergy, text_food_allergy, food_selected, str(timestamp)]
+            #regis_data = [fname, lname, str(phone), email, position, food_allergy, text_food_allergy, food_selected, str(timestamp)]
+            regis_data = [fname, lname, str(phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
             if is_update and fname and lname :
                 update_data(update_row,regis_data)
             else:
@@ -181,6 +184,7 @@ with tab1:
                     st.success("Data added successfully!")
                 else:
                     st.error("Please fill out the form correctly.")
+                    st.error("If you want to leave either the first name or last name empty, please fill it with a \"-\" symbol")
     css="""
     <style>
         [data-testid="stForm"] {
@@ -197,7 +201,7 @@ with tab2:
     tab2_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลการลงทะเบียนเข้าร่วมงาน</p>'
     tab2.markdown(tab2_subhader, unsafe_allow_html=True)
     df = read_data()
-    st.dataframe(df, width=800, height=400)   
+    st.dataframe(df, width=900, height=1000)   
 
 css = '''
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jost">
