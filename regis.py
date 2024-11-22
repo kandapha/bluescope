@@ -9,8 +9,9 @@ logo_image = 'images/Picture_2.png'
 bg_image = 'images/Picture_BG_resize.png'
 
 # Initialize variables for form inputs
-position_list = ['Position','Admin','Architect','Associate director','Cad options','Draft man','Engineer','Interior',
-                    'Landscape','Production','Secretary','Other']
+position_list = ['Position','กรรมการผู้จัดการ','กรรมการบริหาร','ที่ปรึกษาอาสุโส','ผู้เชี่ยวชาญด้านโบราณคดี','Admin','Architect','Associate director','Cad options','Draft man','Engineer','Interior',
+                    'Landscape','Production','Secretary','Senior Architect','Other']
+
 #food_list = ['Meat','Pork']
 fname = ""
 lname = ""
