@@ -115,7 +115,7 @@ def read_fullnames():
     names_list = []
     for i in unique_names_list:
         names_list.append(' '.join(i))
-    return names_list
+    return sorted([""] + names_list)
 
 
 # Create tabs
@@ -137,8 +137,8 @@ with tab1:
         unsafe_allow_html=True
     )
 
-    names = read_fullnames()
-    selected_name = st.selectbox("Select a registered person (optional)", [""] + sorted(names))
+    st.session_state.all_names = read_fullnames()
+    selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
 
     is_update = False
     if selected_name:
@@ -197,6 +197,8 @@ with tab1:
 
             if is_update and fname and lname:
                 update_data(found_row, regis_data)
+                st.session_state.all_names = read_fullnames()  # 'selectbox' will be updated as 'all_named' has been updated
+                st.rerun()  # Force rerun to refresh the selectbox
             else:
                 if fname and lname:  # Basic validation to check if required fields are filled
                     add_data(regis_data)  # Append the row to the sheet
