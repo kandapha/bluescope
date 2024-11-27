@@ -138,18 +138,16 @@ with tab1:
         unsafe_allow_html=True
     )
 
-    names = []
     names = read_fullnames()
-
-    selected_name = st.selectbox(
-        "Select a registered person (optional)", [""] + sorted(names))
+    selected_name = st.selectbox("Select a registered person (optional)", [""] + sorted(names))
 
     is_update = False
     if selected_name:
         words = selected_name.split()
+        print(words)
 
         selected_user_fname = words[0]
-        selected_user_lname = words[1]
+        selected_user_lname = ' '.join(words[1:])
         for found_cell in sheet_by_name.findall(selected_user_fname):
             found_row = found_cell.row
             found_lname = sheet_by_name.cell(found_row, 2).value
