@@ -195,17 +195,18 @@ with tab1:
             regis_data = [fname, lname, str(phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
             print('submit:', regis_data)
 
-            if is_update and fname and lname:
-                update_data(found_row, regis_data)
-                st.session_state.all_names = read_fullnames()  # 'selectbox' will be updated as 'all_named' has been updated
-                st.rerun()  # Force rerun to refresh the selectbox
-            else:
-                if fname and lname:  # Basic validation to check if required fields are filled
+            if fname and lname:  # Basic validation to check if required fields are filled
+                if is_update:
+                    update_data(found_row, regis_data)
+                else:
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
-                else:
-                    st.error("Please fill out the form correctly.")
-                    st.error("If you want to leave either the first name or last name empty, please fill it with a \"-\" symbol")
+
+                st.session_state.all_names = read_fullnames()
+                st.rerun()  # Force rerun to refresh the selectbox
+            else:
+                st.error("Please fill out the form correctly.")
+                st.error("If you want to leave either the first name or last name empty, please fill it with a \"-\" symbol")
     css = """
     <style>
         [data-testid="stForm"] {
@@ -223,6 +224,7 @@ with tab2:
     tab2.markdown(tab2_subhader, unsafe_allow_html=True)
     df = read_data()
     st.dataframe(df, width=900, height=1000)
+
 
 css = '''
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jost">
