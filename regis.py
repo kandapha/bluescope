@@ -75,8 +75,7 @@ SHEET_NAME = 'Sheet1'
 CREDENTIALS_FILE = './credentials.json'
 
 # Connect to the Google Sheet
-sheet_by_name = connect_to_gsheet(
-    CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
+sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
 
 
 # Read Data from Google Sheets
@@ -144,7 +143,7 @@ with tab1:
     is_update = False
     if selected_name:
         words = selected_name.split()
-        print(words)
+        print('select:', words)
 
         selected_user_fname = words[0]
         selected_user_lname = ' '.join(words[1:])
@@ -182,8 +181,7 @@ with tab1:
         lname = st.text_input('Enter your last name *', value=lname)
         phone = st.text_input('Enter your phone number', value=phone)
         email = st.text_input('Enter your email', value=email)
-        position = st.selectbox('Enter your position',
-                                position_list, index=position_idx)
+        position = st.selectbox('Enter your position', position_list, index=position_idx)
         # food_allergy = st.checkbox("Food Allergy", value=is_allergy)
         # text_food_allergy = st.text_input('Enter your allergy:', value=text_food_allergy)
         # food_selected = st.radio("Select your meal", food_list, index=food_selected_idx)
@@ -194,8 +192,9 @@ with tab1:
         if submitted:
             timestamp = datetime.now()
             # regis_data = [fname, lname, str(phone), email, position, food_allergy, text_food_allergy, food_selected, str(timestamp)]
-            regis_data = [fname, lname, str(
-                phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
+            regis_data = [fname, lname, str(phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
+            print('submit:', regis_data)
+
             if is_update and fname and lname:
                 update_data(found_row, regis_data)
             else:
@@ -204,8 +203,7 @@ with tab1:
                     st.success("Data added successfully!")
                 else:
                     st.error("Please fill out the form correctly.")
-                    st.error(
-                        "If you want to leave either the first name or last name empty, please fill it with a \"-\" symbol")
+                    st.error("If you want to leave either the first name or last name empty, please fill it with a \"-\" symbol")
     css = """
     <style>
         [data-testid="stForm"] {
