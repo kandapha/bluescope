@@ -14,7 +14,17 @@ position_list = [
     'Position',
     'กรรมการผู้จัดการ', 'กรรมการบริหาร', 'ที่ปรึกษาอาวุโส', 'ผู้เชี่ยวชาญด้านโบราณคดี',
     'Admin', 'Architect', 'Associate director', 'Cad options', 'Draft man', 'Engineer', 'Interior',
-    'Landscape', 'Production', 'Secretary', 'Senior Architect', 'Other'
+    'Landscape', 'Production', 'Secretary', 'Senior Architect',
+    'Draftsman',
+    'Senior landscape architect',
+    'Landscape',
+    'Landscape Designer',
+    'Associate director',
+    'Cad Options',
+    'Production',
+    'Site Supervisor',
+    'Design Manager',
+    'Other'
 ]
 
 # food_list = ['Meat','Pork']
