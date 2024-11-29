@@ -1,3 +1,8 @@
 openpyxl
 streamlit_js_eval
+st-gsheets-connection
 watchdog
+gspread
+oauth2client
+pandas
+streamlit
