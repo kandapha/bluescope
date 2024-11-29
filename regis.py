@@ -107,6 +107,15 @@ def update_data(update_row, regis_data):
 def read_fullnames():
     fnames = sheet_by_name.col_values(1)[1:]
     lnames = sheet_by_name.col_values(2)[1:]
+
+    # print(fnames, len(fnames))
+    # print(lnames, len(lnames))
+    # FIXME: Should no one missing name or surname since submission
+    if len(fnames) > len(lnames):
+        lnames += [''] * (len(fnames) - len(lnames))
+    if len(fnames) < len(lnames):
+        fnames += [''] * (len(lnames) - len(fnames))
+
     df = pd.DataFrame()
     df['fnames'] = fnames
     df['lnames'] = lnames
