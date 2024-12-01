@@ -106,6 +106,18 @@ def read_cell(row, col):
     return gsheet_participants.cell(row, col).value
 
 
+# Read row data
+@st.cache_data
+def read_row(row):
+    return gsheet_participants.row_values(row)
+
+
+# Read col data
+@st.cache_data
+def read_col(col):
+    return gsheet_participants.col_values(col)
+
+
 # Update data
 def update_data(update_row, regis_data):
     gsheet_participants.update_cell(update_row, 1, regis_data[0].strip())
@@ -121,6 +133,7 @@ def update_data(update_row, regis_data):
 
 
 # Read full-name
+@st.cache_resource
 def read_fullnames():
     fnames = gsheet_participants.col_values(1)[1:]
     lnames = gsheet_participants.col_values(2)[1:]
@@ -185,10 +198,10 @@ def registration_form(tab):
         selected_user_fname = words[0]
         selected_user_lname = ' '.join(words[1:])
 
-        for found_row, found_cell in [ (i+1, n) for i, n in enumerate(gsheet_participants.col_values(1)) if n == selected_user_fname ]:
+        for found_row, found_cell in [ (i+1, n) for i, n in enumerate(read_col(1)) if n == selected_user_fname ]:
             print("time(found fnames): %s", time.time())
 
-            row = gsheet_participants.row_values(found_row)
+            row = read_row(found_row)
             found_lname = row[1]
             if selected_user_lname == found_lname:
                 is_update = True
