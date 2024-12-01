@@ -62,60 +62,57 @@ def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):
              "https://www.googleapis.com/auth/drive.file",
              "https://www.googleapis.com/auth/drive"]
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
-        creds_json, scope)
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scope)
     client = gspread.authorize(credentials)
     spreadsheet = client.open(spreadsheet_name)
     return spreadsheet.worksheet(sheet_name)  # Access specific sheet by name
 
 
+# Connect to the Google Sheet
 # Google Sheet credentials and details
 SPREADSHEET_NAME = 'bluescope_registration_file'
-SHEET_NAME = 'Sheet1'
+SHEET_NAME = 'participants'
 CREDENTIALS_FILE = './credentials.json'
-
-
-# Connect to the Google Sheet
-sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
+gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
 
 
 # Read data from Google Sheets
 def read_data():
-    data = sheet_by_name.get_all_records()  # Get all records from Google Sheet
+    data = gsheet_participants.get_all_records()  # Get all records from Google Sheet
     df = pd.DataFrame(data, dtype=str)
     return df
 
 
 # Add data to Google Sheets
 def add_data(regis_data):
-    # sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
-    sheet_by_name.append_row(regis_data)  # Append the row to the Google Sheet
+    # gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
+    gsheet_participants.append_row(regis_data)  # Append the row to the Google Sheet
 
 
 # Read cell data
 @st.cache_data
 def read_cell(row, col):
-    return sheet_by_name.cell(row, col).value
+    return gsheet_participants.cell(row, col).value
 
 
 # Update data
 def update_data(update_row, regis_data):
-    sheet_by_name.update_cell(update_row, 1, regis_data[0])
-    sheet_by_name.update_cell(update_row, 2, regis_data[1])
-    sheet_by_name.update_cell(update_row, 3, regis_data[2])
-    sheet_by_name.update_cell(update_row, 4, regis_data[3])
-    sheet_by_name.update_cell(update_row, 5, regis_data[4])
-    # sheet_by_name.update_cell(update_row, 6, regis_data[5])
-    # sheet_by_name.update_cell(update_row, 7, regis_data[6])
-    # sheet_by_name.update_cell(update_row, 8, regis_data[7])
-    # sheet_by_name.update_cell(update_row, 9, regis_data[8])
-    sheet_by_name.update_cell(update_row, 6, regis_data[5])
+    gsheet_participants.update_cell(update_row, 1, regis_data[0])
+    gsheet_participants.update_cell(update_row, 2, regis_data[1])
+    gsheet_participants.update_cell(update_row, 3, regis_data[2])
+    gsheet_participants.update_cell(update_row, 4, regis_data[3])
+    gsheet_participants.update_cell(update_row, 5, regis_data[4])
+    # gsheet_participants.update_cell(update_row, 6, regis_data[5])
+    # gsheet_participants.update_cell(update_row, 7, regis_data[6])
+    # gsheet_participants.update_cell(update_row, 8, regis_data[7])
+    # gsheet_participants.update_cell(update_row, 9, regis_data[8])
+    gsheet_participants.update_cell(update_row, 6, regis_data[5])
 
 
 # Read full-name
 def read_fullnames():
-    fnames = sheet_by_name.col_values(1)[1:]
-    lnames = sheet_by_name.col_values(2)[1:]
+    fnames = gsheet_participants.col_values(1)[1:]
+    lnames = gsheet_participants.col_values(2)[1:]
 
     # print(fnames, len(fnames))
     # print(lnames, len(lnames))
@@ -172,7 +169,7 @@ def registration_form(tab):
 
         selected_user_fname = words[0]
         selected_user_lname = ' '.join(words[1:])
-        for found_cell in sheet_by_name.findall(selected_user_fname):
+        for found_cell in gsheet_participants.findall(selected_user_fname):
             found_row = found_cell.row
             found_lname = read_cell(found_row, 2)
             if selected_user_lname == found_lname:
@@ -248,8 +245,7 @@ def registration_info(tab):
     # Display data in the main view
     tab_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลการลงทะเบียนเข้าร่วมงาน</p>'
     tab.markdown(tab_subhader, unsafe_allow_html=True)
-    df = read_data()
-    st.dataframe(df, width=900, height=1000)
+    st.dataframe(read_data(), width=900, height=1000)
 
 
 # -----------------------------------------------------------------------------
