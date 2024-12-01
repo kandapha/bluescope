@@ -79,17 +79,23 @@ CREDENTIALS_FILE = './credentials.json'
 sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
 
 
-# Read Data from Google Sheets
+# Read data from Google Sheets
 def read_data():
     data = sheet_by_name.get_all_records()  # Get all records from Google Sheet
     df = pd.DataFrame(data, dtype=str)
     return df
 
 
-# Add Data to Google Sheets
+# Add data to Google Sheets
 def add_data(regis_data):
     # sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
     sheet_by_name.append_row(regis_data)  # Append the row to the Google Sheet
+
+
+# Read cell data
+@st.cache_data
+def read_cell(row, col):
+    return sheet_by_name.cell(row, col).value
 
 
 # Update data
@@ -168,22 +174,22 @@ def registration_form(tab):
         selected_user_lname = ' '.join(words[1:])
         for found_cell in sheet_by_name.findall(selected_user_fname):
             found_row = found_cell.row
-            found_lname = sheet_by_name.cell(found_row, 2).value
+            found_lname = read_cell(found_row, 2)
             if selected_user_lname == found_lname:
                 # do
                 is_update = True
-                fname = sheet_by_name.cell(found_row, 1).value
-                lname = sheet_by_name.cell(found_row, 2).value
-                phone = sheet_by_name.cell(found_row, 3).value
-                email = sheet_by_name.cell(found_row, 4).value
-                position = sheet_by_name.cell(found_row, 5).value
+                fname = read_cell(found_row, 1)
+                lname = read_cell(found_row, 2)
+                phone = read_cell(found_row, 3)
+                email = read_cell(found_row, 4)
+                position = read_cell(found_row, 5)
                 try:
                     position_idx = position_list.index(position)
                 except ValueError:
                     position_idx = 0
-                # is_allergy = sheet_by_name.cell(update_row, 6).value
-                # text_food_allergy = sheet_by_name.cell(update_row, 7).value
-                # food_selected = sheet_by_name.cell(update_row, 8).value
+                # is_allergy = read_cell(update_row, 6)
+                # text_food_allergy = read_cell(update_row, 7)
+                # food_selected = read_cell(update_row, 8)
                 # try:
                 #    food_selected_idx = food_list.index(food_selected)
                 # except ValueError:
