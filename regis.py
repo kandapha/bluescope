@@ -27,16 +27,6 @@ position_list = [
     'Other'
 ]
 
-# food_list = ['Meat','Pork']
-fname = ""
-lname = ""
-phone = ""
-email = ""
-position_idx = 0
-# is_allergy = False
-# text_food_allergy = ""
-# food_selected_idx = 0
-found_row = 0
 
 # st.logo('logo.png')
 left_co, cent_co, last_co = st.columns(3)
@@ -84,6 +74,7 @@ SPREADSHEET_NAME = 'bluescope_registration_file'
 SHEET_NAME = 'Sheet1'
 CREDENTIALS_FILE = './credentials.json'
 
+
 # Connect to the Google Sheet
 sheet_by_name = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
 
@@ -101,6 +92,7 @@ def add_data(regis_data):
     sheet_by_name.append_row(regis_data)  # Append the row to the Google Sheet
 
 
+# Update data
 def update_data(update_row, regis_data):
     sheet_by_name.update_cell(update_row, 1, regis_data[0])
     sheet_by_name.update_cell(update_row, 2, regis_data[1])
@@ -114,6 +106,7 @@ def update_data(update_row, regis_data):
     sheet_by_name.update_cell(update_row, 6, regis_data[5])
 
 
+# Read full-name
 def read_fullnames():
     fnames = sheet_by_name.col_values(1)[1:]
     lnames = sheet_by_name.col_values(2)[1:]
@@ -137,12 +130,10 @@ def read_fullnames():
     return sorted([""] + names_list)
 
 
-# Create tabs
-tab1, tab2 = st.tabs(["Registration Form | ", "Regis Information"])
-
-with tab1:
-    tab1_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">ลงทะเบียนเข้าร่วมงาน</p>'
-    tab1.markdown(tab1_subhader, unsafe_allow_html=True)
+# Fragment: Registration Form
+def registration_form(tab):
+    tab_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">ลงทะเบียนเข้าร่วมงาน</p>'
+    tab.markdown(tab_subhader, unsafe_allow_html=True)
 
     # Select box to choose a registered person
     st.markdown(
@@ -155,6 +146,15 @@ with tab1:
         """,
         unsafe_allow_html=True
     )
+
+    # food_list = ['Meat','Pork']
+    fname = ""
+    lname = ""
+    phone = ""
+    email = ""
+    position_idx = 0
+    # food_selected_idx = 0
+    found_row = 0
 
     st.session_state.all_names = read_fullnames()
     selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
@@ -237,12 +237,22 @@ with tab1:
     st.write(css, unsafe_allow_html=True)
 
 
-with tab2:
+# Fragment: Registration Info
+def registration_info(tab):
     # Display data in the main view
-    tab2_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลการลงทะเบียนเข้าร่วมงาน</p>'
-    tab2.markdown(tab2_subhader, unsafe_allow_html=True)
+    tab_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลการลงทะเบียนเข้าร่วมงาน</p>'
+    tab.markdown(tab_subhader, unsafe_allow_html=True)
     df = read_data()
     st.dataframe(df, width=900, height=1000)
+
+
+# -----------------------------------------------------------------------------
+# Create tabs
+tab1, tab2 = st.tabs(["Registration Form | ", "Regis Information"])
+with tab1:
+    registration_form(tab1)
+with tab2:
+    registration_info(tab2)
 
 
 css = '''
