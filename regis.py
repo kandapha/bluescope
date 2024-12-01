@@ -3,6 +3,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import time
 import base64
 
 
@@ -12,9 +13,21 @@ bg_image = 'images/Picture_BG_resize.png'
 # Initialize variables for form inputs
 position_list = [
     'Position',
-    'กรรมการผู้จัดการ', 'กรรมการบริหาร', 'ที่ปรึกษาอาวุโส', 'ผู้เชี่ยวชาญด้านโบราณคดี',
-    'Admin', 'Architect', 'Associate director', 'Cad options', 'Draft man', 'Engineer', 'Interior',
-    'Landscape', 'Production', 'Secretary', 'Senior Architect',
+    'กรรมการผู้จัดการ',
+    'กรรมการบริหาร',
+    'ที่ปรึกษาอาวุโส',
+    'ผู้เชี่ยวชาญด้านโบราณคดี',
+    'Admin',
+    'Architect',
+    'Associate director',
+    'Cad options',
+    'Draft man',
+    'Engineer',
+    'Interior',
+    'Landscape',
+    'Production',
+    'Secretary',
+    'Senior Architect',
     'Draftsman',
     'Senior landscape architect',
     'Landscape',
@@ -55,8 +68,8 @@ def set_bg_hack(main_bg):
 set_bg_hack(bg_image)
 
 
-# Authenticate and connect to Google Sheets
-def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):
+# Connect to the Google Sheet
+def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):  # Authenticate and connect to Google Sheets
     scope = ["https://spreadsheets.google.com/feeds",
              'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file",
@@ -68,11 +81,9 @@ def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):
     return spreadsheet.worksheet(sheet_name)  # Access specific sheet by name
 
 
-# Connect to the Google Sheet
-# Google Sheet credentials and details
 SPREADSHEET_NAME = 'bluescope_registration_file'
 SHEET_NAME = 'participants'
-CREDENTIALS_FILE = './credentials.json'
+CREDENTIALS_FILE = './credentials.json'  # Google Sheet credentials and details
 gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
 
 
@@ -97,8 +108,8 @@ def read_cell(row, col):
 
 # Update data
 def update_data(update_row, regis_data):
-    gsheet_participants.update_cell(update_row, 1, regis_data[0])
-    gsheet_participants.update_cell(update_row, 2, regis_data[1])
+    gsheet_participants.update_cell(update_row, 1, regis_data[0].strip())
+    gsheet_participants.update_cell(update_row, 2, regis_data[1].strip())
     gsheet_participants.update_cell(update_row, 3, regis_data[2])
     gsheet_participants.update_cell(update_row, 4, regis_data[3])
     gsheet_participants.update_cell(update_row, 5, regis_data[4])
@@ -159,27 +170,33 @@ def registration_form(tab):
     # food_selected_idx = 0
     found_row = 0
 
+    print("time(before selected_name): %s", time.time())
+
     st.session_state.all_names = read_fullnames()
     selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
 
     is_update = False
     if selected_name:
         words = selected_name.split()
+
+        print("time(after selected_name): %s", time.time())
         print('select:', words)
 
         selected_user_fname = words[0]
         selected_user_lname = ' '.join(words[1:])
-        for found_cell in gsheet_participants.findall(selected_user_fname):
-            found_row = found_cell.row
-            found_lname = read_cell(found_row, 2)
+
+        for found_row, found_cell in [ (i+1, n) for i, n in enumerate(gsheet_participants.col_values(1)) if n == selected_user_fname ]:
+            print("time(found fnames): %s", time.time())
+
+            row = gsheet_participants.row_values(found_row)
+            found_lname = row[1]
             if selected_user_lname == found_lname:
-                # do
                 is_update = True
-                fname = read_cell(found_row, 1)
-                lname = read_cell(found_row, 2)
-                phone = read_cell(found_row, 3)
-                email = read_cell(found_row, 4)
-                position = read_cell(found_row, 5)
+                fname = row[0]
+                lname = row[1]
+                phone = row[2]
+                email = row[3]
+                position = row[4]
                 try:
                     position_idx = position_list.index(position)
                 except ValueError:
@@ -191,6 +208,8 @@ def registration_form(tab):
                 #    food_selected_idx = food_list.index(food_selected)
                 # except ValueError:
                 #    food_selected_idx = 0
+
+            print("time(after read row): %s", time.time())
     else:
         is_update = False  # add new
 
