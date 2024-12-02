@@ -128,6 +128,7 @@ def read_names():
 # Read positions
 @st.cache_resource
 def read_positions():
+    print('Press C button for clearing cache, then ctrl-r for refreshing the browser')
     return gsheet_positions.col_values(1)
 
 
