@@ -138,11 +138,23 @@ def update_data(update_row, regis_data):
     # gsheet_participants.update_cell(update_row, 9, regis_data[8])
     gsheet_participants.update_cell(update_row, 6, regis_data[5])
 
+    # Clear cache
+    read_cell.clear()
+    read_col.clear()
+    read_row.clear()
+    read_names.clear()
+
 
 # Add data to Google Sheets
 def add_data(regis_data):
     # gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
     gsheet_participants.append_row(regis_data)  # Append the row to the Google Sheet
+
+    # Clear cache
+    read_cell.clear()
+    read_col.clear()
+    read_row.clear()
+    read_names.clear()
 
 
 # Read data from Google Sheets
