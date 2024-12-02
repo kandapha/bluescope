@@ -7,8 +7,8 @@ import time
 import base64
 
 
-logo_image = 'images/Picture_2.png'
-bg_image = 'images/Picture_BG_resize.png'
+logo_image = 'images/logo_2.png'
+background_image = 'images/background_resize.png'
 
 # Initialize variables for form inputs
 position_list = [
@@ -42,21 +42,21 @@ position_list = [
 
 
 # st.logo('logo.png')
-left_co, cent_co, last_co = st.columns(3)
-with cent_co:
+left_column, center_column, right_column = st.columns(3)
+with center_column:
     st.image(logo_image, width=200)
 
 
 # Set the background image
-def set_bg_hack(main_bg):
+def set_background_hack(main_background):
     # set bg name
-    main_bg_ext = "png"
+    main_background_extension = "png"
 
     st.markdown(
         f"""
          <style>
          .stApp {{
-             background: url(data:image/{main_bg_ext};base64,{base64.b64encode(open(main_bg, "rb").read()).decode()});
+             background: url(data:image/{main_background_extension};base64,{base64.b64encode(open(main_background, "rb").read()).decode()});
              background-size: cover
          }}
          </style>
@@ -65,7 +65,7 @@ def set_bg_hack(main_bg):
     )
 
 
-set_bg_hack(bg_image)
+set_background_hack(background_image)
 
 
 # Connect to the Google Sheet
@@ -87,19 +87,6 @@ CREDENTIALS_FILE = './credentials.json'  # Google Sheet credentials and details
 gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
 
 
-# Read data from Google Sheets
-def read_data():
-    data = gsheet_participants.get_all_records()  # Get all records from Google Sheet
-    df = pd.DataFrame(data, dtype=str)
-    return df
-
-
-# Add data to Google Sheets
-def add_data(regis_data):
-    # gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
-    gsheet_participants.append_row(regis_data)  # Append the row to the Google Sheet
-
-
 # Read cell data
 @st.cache_data
 def read_cell(row, col):
@@ -118,6 +105,26 @@ def read_col(col):
     return gsheet_participants.col_values(col)
 
 
+# Read full-name
+@st.cache_resource
+def read_names():
+    first_names = gsheet_participants.col_values(1)[1:]
+    last_names = gsheet_participants.col_values(2)[1:]
+
+    # FIXME: Should no one missing name or surname since submission
+    if len(first_names) > len(last_names):
+        last_names += [''] * (len(first_names) - len(last_names))
+    if len(first_names) < len(last_names):
+        first_names += [''] * (len(last_names) - len(first_names))
+
+    df = pd.DataFrame()
+    df['first_name'] = first_names
+    df['last_name'] = last_names
+    unique_names_df = df[['first_name', 'last_name']].drop_duplicates()
+    unique_names_list = list(unique_names_df.itertuples(index=False, name=None))
+    return sorted([''] + [' '.join(i) for i in unique_names_list])
+
+
 # Update data
 def update_data(update_row, regis_data):
     gsheet_participants.update_cell(update_row, 1, regis_data[0].strip())
@@ -132,27 +139,17 @@ def update_data(update_row, regis_data):
     gsheet_participants.update_cell(update_row, 6, regis_data[5])
 
 
-# Read full-name
-@st.cache_resource
-def read_fullnames():
-    first_names = gsheet_participants.col_values(1)[1:]
-    last_names = gsheet_participants.col_values(2)[1:]
+# Add data to Google Sheets
+def add_data(regis_data):
+    # gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
+    gsheet_participants.append_row(regis_data)  # Append the row to the Google Sheet
 
-    # FIXME: Should no one missing name or surname since submission
-    if len(first_names) > len(last_names):
-        last_names += [''] * (len(first_names) - len(last_names))
-    if len(first_names) < len(last_names):
-        first_names += [''] * (len(last_names) - len(first_names))
 
-    df = pd.DataFrame()
-    df['fnames'] = first_names
-    df['lnames'] = last_names
-    unique_names = df[['fnames', 'lnames']].drop_duplicates()
-    unique_names_list = list(unique_names.itertuples(index=False, name=None))
-    names_list = []
-    for i in unique_names_list:
-        names_list.append(' '.join(i))
-    return sorted([""] + names_list)
+# Read data from Google Sheets
+def read_data():
+    data = gsheet_participants.get_all_records()  # Get all records from Google Sheet
+    df = pd.DataFrame(data, dtype=str)
+    return df
 
 
 # Fragment: Registration Form
@@ -171,39 +168,38 @@ def registration_form():
     )
 
     # food_list = ['Meat','Pork']
-    fname = ""
-    lname = ""
+    first_name = ""
+    last_name = ""
     phone = ""
     email = ""
     position_idx = 0
     # food_selected_idx = 0
-    found_row = 0
+    found_row_index = 0
 
-    print("time(before selected_name): %s", time.time())
+    print("time(reg_form get started..): %s", time.time())
 
-    st.session_state.all_names = read_fullnames()
+    st.session_state.all_names = read_names()
     # selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
-    selected_name = st.selectbox("Select a registered person (optional)", read_fullnames())
+    selected_name = st.selectbox("Select a registered person (optional)", read_names())
+    print("time(reg_form got selected_name): %s", time.time())
 
     is_update = False
     if selected_name:
         words = selected_name.split()
-
-        print("time(after selected_name): %s", time.time())
         print('select:', words)
 
-        selected_user_fname = words[0]
-        selected_user_lname = ' '.join(words[1:])
+        selected_first_name = words[0]
+        selected_last_name = ' '.join(words[1:])
 
-        for found_row, found_cell in [ (i+1, n) for i, n in enumerate(read_col(1)) if n == selected_user_fname ]:
-            print("time(found fnames): %s", time.time())
+        for found_row_index, found_cell in [ (i+1, n) for i, n in enumerate(read_col(1)) if n == selected_first_name ]:
+            print("time(reg_form yield cell containing selected_first_name): %s", time.time())
 
-            row = read_row(found_row)
-            found_lname = row[1]
-            if selected_user_lname == found_lname:
+            row = read_row(found_row_index)
+            found_last_name = row[1]
+            if selected_last_name == found_last_name:
                 is_update = True
-                fname = row[0]
-                lname = row[1]
+                first_name = row[0]
+                last_name = row[1]
                 phone = row[2]
                 email = row[3]
                 position = row[4]
@@ -219,7 +215,7 @@ def registration_form():
                 # except ValueError:
                 #    food_selected_idx = 0
 
-            print("time(after read row): %s", time.time())
+                print("time(reg_form found cell with selected name): %s", time.time())
     else:
         is_update = False  # add new
 
@@ -228,8 +224,8 @@ def registration_form():
 
     # Assuming the sheet has columns: 'Name', 'Age', 'Email'
     with st.form(key="data_form", clear_on_submit=True):
-        fname = st.text_input('Enter your first name *', value=fname)
-        lname = st.text_input('Enter your last name *', value=lname)
+        first_name = st.text_input('Enter your first name *', value=first_name)
+        last_name = st.text_input('Enter your last name *', value=last_name)
         phone = st.text_input('Enter your phone number', value=phone)
         email = st.text_input('Enter your email', value=email)
         position = st.selectbox('Enter your position', position_list, index=position_idx)
@@ -243,17 +239,17 @@ def registration_form():
         if submitted:
             timestamp = datetime.now()
             # regis_data = [fname, lname, str(phone), email, position, food_allergy, text_food_allergy, food_selected, str(timestamp)]
-            regis_data = [fname, lname, str(phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
+            regis_data = [first_name, last_name, str(phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
             print('submit:', regis_data)
 
-            if fname and lname:  # Basic validation to check if required fields are filled
+            if first_name and last_name:  # Basic validation to check if required fields are filled
                 if is_update:
-                    update_data(found_row, regis_data)
+                    update_data(found_row_index, regis_data)
                 else:
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
 
-                st.session_state.all_names = read_fullnames()
+                st.session_state.all_names = read_names()
                 st.rerun()  # Force rerun to refresh the selectbox
             else:
                 st.error("Please fill out the form correctly.")
