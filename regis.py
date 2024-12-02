@@ -11,34 +11,34 @@ logo_image = 'images/logo_2.png'
 background_image = 'images/background_resize.png'
 
 # Initialize variables for form inputs
-position_list = [
-    'Position',
-    'กรรมการผู้จัดการ',
-    'กรรมการบริหาร',
-    'ที่ปรึกษาอาวุโส',
-    'ผู้เชี่ยวชาญด้านโบราณคดี',
-    'Admin',
-    'Architect',
-    'Associate director',
-    'Cad options',
-    'Draft man',
-    'Engineer',
-    'Interior',
-    'Landscape',
-    'Production',
-    'Secretary',
-    'Senior Architect',
-    'Draftsman',
-    'Senior landscape architect',
-    'Landscape',
-    'Landscape Designer',
-    'Associate director',
-    'Cad Options',
-    'Production',
-    'Site Supervisor',
-    'Design Manager',
-    'Other'
-]
+# position_list = [
+#     'Position',
+#     'กรรมการผู้จัดการ',
+#     'กรรมการบริหาร',
+#     'ที่ปรึกษาอาวุโส',
+#     'ผู้เชี่ยวชาญด้านโบราณคดี',
+#     'Admin',
+#     'Architect',
+#     'Associate director',
+#     'Cad options',
+#     'Draft man',
+#     'Engineer',
+#     'Interior',
+#     'Landscape',
+#     'Production',
+#     'Secretary',
+#     'Senior Architect',
+#     'Draftsman',
+#     'Senior landscape architect',
+#     'Landscape',
+#     'Landscape Designer',
+#     'Associate director',
+#     'Cad Options',
+#     'Production',
+#     'Site Supervisor',
+#     'Design Manager',
+#     'Other'
+# ]
 
 
 # st.logo('logo.png')
@@ -82,9 +82,9 @@ def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):  # Authenticate
 
 
 SPREADSHEET_NAME = 'bluescope_registration_file'
-SHEET_NAME = 'participants'
 CREDENTIALS_FILE = './credentials.json'  # Google Sheet credentials and details
-gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
+gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name='participants')
+gsheet_positions = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name='positions')
 
 
 # Read cell data
@@ -125,6 +125,13 @@ def read_names():
     return sorted([''] + [' '.join(i) for i in unique_names_list])
 
 
+# Read positions
+@st.cache_resource
+def read_positions():
+    print('Press C button for clearing cache, then ctrl-r for refreshing the browser')
+    return gsheet_positions.col_values(1)
+
+
 # Update data
 def update_data(update_row, regis_data):
     gsheet_participants.update_cell(update_row, 1, regis_data[0].strip())
@@ -147,7 +154,6 @@ def update_data(update_row, regis_data):
 
 # Add data to Google Sheets
 def add_data(regis_data):
-    # gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name=SHEET_NAME)
     gsheet_participants.append_row(regis_data)  # Append the row to the Google Sheet
 
     # Clear cache
@@ -194,6 +200,9 @@ def registration_form():
     # selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
     selected_name = st.selectbox("Select a registered person (optional)", read_names())
     print("time(reg_form got selected_name): %s", time.time())
+
+    position_list = read_positions()
+    print("time(reg_form got position_list): %s", time.time())
 
     is_update = False
     if selected_name:
