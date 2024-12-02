@@ -158,10 +158,8 @@ def read_fullnames():
 
 
 # Fragment: Registration Form
-def registration_form(tab):
-    tab_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">ลงทะเบียนเข้าร่วมงาน</p>'
-    tab.markdown(tab_subhader, unsafe_allow_html=True)
-
+@st.fragment()
+def registration_form():
     # Select box to choose a registered person
     st.markdown(
         """
@@ -186,7 +184,8 @@ def registration_form(tab):
     print("time(before selected_name): %s", time.time())
 
     st.session_state.all_names = read_fullnames()
-    selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
+    # selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
+    selected_name = st.selectbox("Select a registered person (optional)", read_fullnames())
 
     is_update = False
     if selected_name:
@@ -273,10 +272,8 @@ def registration_form(tab):
 
 
 # Fragment: Registration Info
-def registration_info(tab):
-    # Display data in the main view
-    tab_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลการลงทะเบียนเข้าร่วมงาน</p>'
-    tab.markdown(tab_subhader, unsafe_allow_html=True)
+@st.fragment()
+def registration_info():
     st.dataframe(read_data(), width=900, height=1000)
 
 
@@ -284,9 +281,13 @@ def registration_info(tab):
 # Create tabs
 tab1, tab2 = st.tabs(["Registration Form | ", "Regis Information"])
 with tab1:
-    registration_form(tab1)
+    tab1_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">ลงทะเบียนเข้าร่วมงาน</p>'
+    tab1.markdown(tab1_subhader, unsafe_allow_html=True)
+    registration_form()
 with tab2:
-    registration_info(tab2)
+    tab2_subhader = '<p style="color:White; font-size: 28px; font-family:kanit;">แสดงข้อมูลการลงทะเบียนเข้าร่วมงาน</p>'
+    tab2.markdown(tab2_subhader, unsafe_allow_html=True)
+    registration_info()
 
 
 css = '''
