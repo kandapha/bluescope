@@ -135,20 +135,18 @@ def update_data(update_row, regis_data):
 # Read full-name
 @st.cache_resource
 def read_fullnames():
-    fnames = gsheet_participants.col_values(1)[1:]
-    lnames = gsheet_participants.col_values(2)[1:]
+    first_names = gsheet_participants.col_values(1)[1:]
+    last_names = gsheet_participants.col_values(2)[1:]
 
-    # print(fnames, len(fnames))
-    # print(lnames, len(lnames))
     # FIXME: Should no one missing name or surname since submission
-    if len(fnames) > len(lnames):
-        lnames += [''] * (len(fnames) - len(lnames))
-    if len(fnames) < len(lnames):
-        fnames += [''] * (len(lnames) - len(fnames))
+    if len(first_names) > len(last_names):
+        last_names += [''] * (len(first_names) - len(last_names))
+    if len(first_names) < len(last_names):
+        first_names += [''] * (len(last_names) - len(first_names))
 
     df = pd.DataFrame()
-    df['fnames'] = fnames
-    df['lnames'] = lnames
+    df['fnames'] = first_names
+    df['lnames'] = last_names
     unique_names = df[['fnames', 'lnames']].drop_duplicates()
     unique_names_list = list(unique_names.itertuples(index=False, name=None))
     names_list = []
