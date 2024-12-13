@@ -87,6 +87,15 @@ gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, shee
 gsheet_positions = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name='positions')
 
 
+# Safe lite to prevent accessing a missing item
+class safelist(list):
+    def get(self, index, default=None):
+        try:
+            return self[index]
+        except IndexError:
+            return default
+
+
 # Read cell data
 @st.cache_data
 def read_cell(row, col):
@@ -216,14 +225,17 @@ def registration_form():
             print("time(reg_form yield cell containing selected_first_name): %s", time.time())
 
             row = read_row(found_row_index)
-            found_last_name = row[1]
+            print(f'read_row got {type(row)} len:{len(row)}')
+            row = safelist(row)
+
+            found_last_name = row.get(1, '')
             if selected_last_name == found_last_name:
                 is_update = True
-                first_name = row[0]
-                last_name = row[1]
-                phone = row[2]
-                email = row[3]
-                position = row[4]
+                first_name  = row.get(0, '')
+                last_name   = row.get(1, '')
+                phone       = row.get(2, '')
+                email       = row.get(3, '')
+                position    = row.get(4, '')
                 try:
                     position_idx = position_list.index(position)
                 except ValueError:
