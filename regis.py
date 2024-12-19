@@ -115,7 +115,7 @@ def read_col(col):
 
 
 # Read full-name
-@st.cache_resource
+@st.cache_data
 def read_names():
     first_names = gsheet_participants.col_values(1)[1:]
     last_names = gsheet_participants.col_values(2)[1:]
@@ -135,7 +135,7 @@ def read_names():
 
 
 # Read positions
-@st.cache_resource
+@st.cache_data
 def read_positions():
     print('Press C button for clearing cache, then ctrl-r for refreshing the browser')
     return gsheet_positions.col_values(1)
