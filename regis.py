@@ -123,10 +123,10 @@ def read_col(col):
 # Read full-name
 @st.cache_data
 def read_names():
-    first_names = gsheet_participants.col_values(1)[1:]
-    last_names = gsheet_participants.col_values(2)[1:]
+    first_names = read_col(1)[1:]
+    last_names = read_col(2)[1:]
 
-    # FIXME: Should no one missing name or surname since submission
+    # FIXME: Should no missing name or surname since submission
     if len(first_names) > len(last_names):
         last_names += [''] * (len(first_names) - len(last_names))
     if len(first_names) < len(last_names):
@@ -136,8 +136,8 @@ def read_names():
     df['first_name'] = first_names
     df['last_name'] = last_names
     unique_names_df = df[['first_name', 'last_name']].drop_duplicates()
-    unique_names_list = list(unique_names_df.itertuples(index=False, name=None))
-    return sorted([''] + [' '.join(i) for i in unique_names_list])
+    unique_names_list = list(unique_names_df.itertuples(index=False, name=None))  # Make list of tuples
+    return sorted([''] + [' '.join(i) for i in unique_names_list])  # Cancatenate names+surnames, and, lead them with blank item
 
 
 # Read positions
