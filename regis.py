@@ -5,40 +5,11 @@ import pandas as pd
 from datetime import datetime
 import time
 import base64
+from threading import Lock
 
 
 logo_image = 'images/logo_2.png'
 background_image = 'images/background_resize.png'
-
-# Initialize variables for form inputs
-# position_list = [
-#     'Position',
-#     'กรรมการผู้จัดการ',
-#     'กรรมการบริหาร',
-#     'ที่ปรึกษาอาวุโส',
-#     'ผู้เชี่ยวชาญด้านโบราณคดี',
-#     'Admin',
-#     'Architect',
-#     'Associate director',
-#     'Cad options',
-#     'Draft man',
-#     'Engineer',
-#     'Interior',
-#     'Landscape',
-#     'Production',
-#     'Secretary',
-#     'Senior Architect',
-#     'Draftsman',
-#     'Senior landscape architect',
-#     'Landscape',
-#     'Landscape Designer',
-#     'Associate director',
-#     'Cad Options',
-#     'Production',
-#     'Site Supervisor',
-#     'Design Manager',
-#     'Other'
-# ]
 
 
 # st.logo('logo.png')
@@ -103,44 +74,54 @@ class safelist(list):
 
 
 # Read cell data
+read_cell_lock = Lock()
+
 @st.cache_data
 def read_cell(row, col):
-    return gsheet_participants.cell(row, col).value
+    with read_cell_lock: return gsheet_participants.cell(row, col).value
 
 
 # Read row data
+read_row_lock = Lock()
+
 @st.cache_data
 def read_row(row):
-    return gsheet_participants.row_values(row)
+    with read_row_lock: return gsheet_participants.row_values(row)
 
 
 # Read col data
+read_col_lock = Lock()
+
 @st.cache_data
 def read_col(col):
-    return gsheet_participants.col_values(col)
+    with read_col_lock: return gsheet_participants.col_values(col)
 
 
 # Read full-name
+read_names_lock = Lock()
+
 @st.cache_data
 def read_names():
-    first_names = read_col(1)[1:]
-    last_names = read_col(2)[1:]
+    with read_names_lock:
+        first_names = read_col(1)[1:]
+        last_names = read_col(2)[1:]
 
-    # FIXME: Should no missing name or surname since submission
-    if len(first_names) > len(last_names):
-        last_names += [''] * (len(first_names) - len(last_names))
-    if len(first_names) < len(last_names):
-        first_names += [''] * (len(last_names) - len(first_names))
+        # FIXME: Should no missing name or surname since submission
+        if len(first_names) > len(last_names):
+            last_names += [''] * (len(first_names) - len(last_names))
+        if len(first_names) < len(last_names):
+            first_names += [''] * (len(last_names) - len(first_names))
 
-    df = pd.DataFrame()
-    df['first_name'] = first_names
-    df['last_name'] = last_names
-    unique_names_df = df[['first_name', 'last_name']].drop_duplicates()
-    unique_names_list = list(unique_names_df.itertuples(index=False, name=None))  # Make list of tuples
-    return sorted([''] + [' '.join(i) for i in unique_names_list])  # Cancatenate names+surnames, and, lead them with blank item
+        df = pd.DataFrame()
+        df['first_name'] = first_names
+        df['last_name'] = last_names
+        unique_names_df = df[['first_name', 'last_name']].drop_duplicates()
+        unique_names_list = list(unique_names_df.itertuples(index=False, name=None))  # Make list of tuples
+        return sorted([''] + [' '.join(i) for i in unique_names_list])  # Cancatenate names+surnames, and, lead them with blank item
 
 
 # Read positions
+# Its cache can be cleared with 'c' key
 @st.cache_data
 def read_positions():
     print('Press C button for clearing cache, then ctrl-r for refreshing the browser')
@@ -157,11 +138,13 @@ def update_data(row_index, regis_data):
     gsheet_participants.update_cell(row_index, 6, regis_data[5])  # timestamp
 
     # Clear cache
-    for i in range(1, 7):
-        read_cell.clear(row_index, i)
-    read_col.clear()
-    read_row.clear(row_index)
-    read_names.clear()
+    with read_cell_lock:
+        for i in range(1, 7):
+            read_cell.clear(row_index, i)
+
+    with read_col_lock: read_col.clear()
+    with read_row_lock: read_row.clear(row_index)
+    with read_names_lock: read_names.clear()
 
 
 # Add data to Google Sheets
@@ -170,9 +153,9 @@ def add_data(regis_data):
 
     # Clear cache
     # read_cell.clear()
-    read_col.clear()
+    with read_col_lock: read_col.clear()
     # read_row.clear()
-    read_names.clear()
+    with read_names_lock: read_names.clear()
 
 
 # Read data from Google Sheets
