@@ -149,16 +149,12 @@ def read_positions():
 
 # Update data
 def update_data(row_index, regis_data):
-    gsheet_participants.update_cell(row_index, 1, regis_data[0])
-    gsheet_participants.update_cell(row_index, 2, regis_data[1])
-    gsheet_participants.update_cell(row_index, 3, regis_data[2])
-    gsheet_participants.update_cell(row_index, 4, regis_data[3])
-    gsheet_participants.update_cell(row_index, 5, regis_data[4])
-    # gsheet_participants.update_cell(row_index, 6, regis_data[5])
-    # gsheet_participants.update_cell(row_index, 7, regis_data[6])
-    # gsheet_participants.update_cell(row_index, 8, regis_data[7])
-    # gsheet_participants.update_cell(row_index, 9, regis_data[8])
-    gsheet_participants.update_cell(row_index, 6, regis_data[5])
+    gsheet_participants.update_cell(row_index, 1, regis_data[0])  # first_name
+    gsheet_participants.update_cell(row_index, 2, regis_data[1])  # last_name
+    gsheet_participants.update_cell(row_index, 3, regis_data[2])  # phone
+    gsheet_participants.update_cell(row_index, 4, regis_data[3])  # email
+    gsheet_participants.update_cell(row_index, 5, regis_data[4])  # position
+    gsheet_participants.update_cell(row_index, 6, regis_data[5])  # timestamp
 
     # Clear cache
     read_cell.clear()
@@ -261,29 +257,28 @@ def registration_form():
 
     # Assuming the sheet has columns: 'Name', 'Age', 'Email'
     with st.form(key="data_form", clear_on_submit=True):
-        first_name = st.text_input('Enter your first name *', value=first_name)
-        first_name = first_name.strip()
-        last_name = st.text_input('Enter your last name *', value=last_name)
-        last_name = last_name.strip()
-        phone = st.text_input('Enter your phone number', value=phone)
-        email = st.text_input('Enter your email', value=email)
-        position = st.selectbox('Enter your position', position_list, index=position_idx)
+        first_name  = st.text_input('Enter your first name *', value=first_name).strip()
+        last_name   = st.text_input('Enter your last name *', value=last_name).strip()
+        phone       = st.text_input('Enter your phone number', value=phone)
+        email       = st.text_input('Enter your email', value=email)
+        position    = st.selectbox('Enter your position', position_list, index=position_idx)
         # food_allergy = st.checkbox("Food Allergy", value=is_allergy)
         # text_food_allergy = st.text_input('Enter your allergy:', value=text_food_allergy)
         # food_selected = st.radio("Select your meal", food_list, index=food_selected_idx)
 
         # Submit button inside the form
         submitted = st.form_submit_button("Submit")
+
         # Handle form submission
         if submitted:
             timestamp = datetime.now()
-            # regis_data = [fname, lname, str(phone), email, position, food_allergy, text_food_allergy, food_selected, str(timestamp)]
             regis_data = [first_name, last_name, str(phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
             print('submit:', regis_data)
 
             if first_name and last_name:  # Basic validation to check if required fields are filled
                 if is_update:
                     update_data(found_row_index, regis_data)
+                    st.success("Data updated!")
                 else:
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
