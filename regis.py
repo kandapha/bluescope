@@ -69,7 +69,7 @@ set_background_hack(background_image)
 
 
 # Connect to the Google Sheet
-def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):  # Authenticate and connect to Google Sheets
+def connect_to_gsheet(creds_json, spreadsheet_name):  # Authenticate and connect to Google Sheets
     scope = ["https://spreadsheets.google.com/feeds",
              'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file",
@@ -78,13 +78,19 @@ def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):  # Authenticate
     credentials = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scope)
     client = gspread.authorize(credentials)
     spreadsheet = client.open(spreadsheet_name)
-    return spreadsheet.worksheet(sheet_name)  # Access specific sheet by name
+    return spreadsheet
 
 
 SPREADSHEET_NAME = 'bluescope_registration_file'
 CREDENTIALS_FILE = './credentials.json'  # Google Sheet credentials and details
-gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name='participants')
-gsheet_positions = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name='positions')
+if 'gsheet' not in st.session_state:
+    st.session_state.gsheet = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME)
+# if 'gsheet_participants' not in st.session_state:
+#     st.session_state.gsheet_participants = st.session_state.gsheet.worksheet('participants')
+gsheet_participants = st.session_state.gsheet.worksheet('participants')
+# if 'gsheet_positions' not in st.session_state:
+#     st.session_state.gsheet_positions = st.session_state.gsheet.worksheet('positions')
+gsheet_positions = st.session_state.gsheet.worksheet('positions')
 
 
 # Safe lite to prevent accessing a missing item
@@ -216,7 +222,7 @@ def registration_form():
     is_update = False  # Will do updating if true else do adding
     if selected_name:
         words = selected_name.split()
-        print('select guest:', words)
+        print('selected guest:', words)
 
         selected_first_name = words[0]
         selected_last_name = ' '.join(words[1:])
