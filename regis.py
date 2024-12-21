@@ -130,12 +130,38 @@ def read_positions():
 
 # Update data
 def update_data(row_index, regis_data):
-    gsheet_participants.update_cell(row_index, 1, regis_data[0])  # first_name
-    gsheet_participants.update_cell(row_index, 2, regis_data[1])  # last_name
-    gsheet_participants.update_cell(row_index, 3, regis_data[2])  # phone
-    gsheet_participants.update_cell(row_index, 4, regis_data[3])  # email
-    gsheet_participants.update_cell(row_index, 5, regis_data[4])  # position
-    gsheet_participants.update_cell(row_index, 6, regis_data[5])  # timestamp
+
+    # gsheet_participants.update_cell(row_index, 1, regis_data[0])  # first_name
+    # gsheet_participants.update_cell(row_index, 2, regis_data[1])  # last_name
+    # gsheet_participants.update_cell(row_index, 3, regis_data[2])  # phone
+    # gsheet_participants.update_cell(row_index, 4, regis_data[3])  # email
+    # gsheet_participants.update_cell(row_index, 5, regis_data[4])  # position
+    # gsheet_participants.update_cell(row_index, 6, regis_data[5])  # timestamp
+
+    def column_number_to_letter(column):
+        result = ''
+        while column > 0:
+            column, remainder = divmod(column - 1, 26)
+            result = chr(remainder + 65) + result
+        return result
+
+    values = [
+        # ["Product", "Price", "Quantity"],
+        # ["Apples", 1.2, 10],
+        # ["Oranges", 0.8, 15],
+        # ["Bananas", 0.5, 20],
+        regis_data,
+    ]
+    num_rows = len(values)
+    num_cols = len(values[0])
+    start_row = row_index
+    start_col = 1
+
+    start_cell = f'{column_number_to_letter(start_col)}{start_row}'
+    end_cell = f'{column_number_to_letter(start_col + num_cols - 1)}{start_row + num_rows - 1}'
+    range_to_update = f'{start_cell}:{end_cell}'
+
+    gsheet_participants.update(range_to_update, values)
 
     # Clear cache
     with read_cell_lock:
