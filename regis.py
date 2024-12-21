@@ -142,17 +142,17 @@ def read_positions():
 
 
 # Update data
-def update_data(update_row, regis_data):
-    gsheet_participants.update_cell(update_row, 1, regis_data[0].strip())
-    gsheet_participants.update_cell(update_row, 2, regis_data[1].strip())
-    gsheet_participants.update_cell(update_row, 3, regis_data[2])
-    gsheet_participants.update_cell(update_row, 4, regis_data[3])
-    gsheet_participants.update_cell(update_row, 5, regis_data[4])
-    # gsheet_participants.update_cell(update_row, 6, regis_data[5])
-    # gsheet_participants.update_cell(update_row, 7, regis_data[6])
-    # gsheet_participants.update_cell(update_row, 8, regis_data[7])
-    # gsheet_participants.update_cell(update_row, 9, regis_data[8])
-    gsheet_participants.update_cell(update_row, 6, regis_data[5])
+def update_data(row_index, regis_data):
+    gsheet_participants.update_cell(row_index, 1, regis_data[0])
+    gsheet_participants.update_cell(row_index, 2, regis_data[1])
+    gsheet_participants.update_cell(row_index, 3, regis_data[2])
+    gsheet_participants.update_cell(row_index, 4, regis_data[3])
+    gsheet_participants.update_cell(row_index, 5, regis_data[4])
+    # gsheet_participants.update_cell(row_index, 6, regis_data[5])
+    # gsheet_participants.update_cell(row_index, 7, regis_data[6])
+    # gsheet_participants.update_cell(row_index, 8, regis_data[7])
+    # gsheet_participants.update_cell(row_index, 9, regis_data[8])
+    gsheet_participants.update_cell(row_index, 6, regis_data[5])
 
     # Clear cache
     read_cell.clear()
@@ -205,7 +205,7 @@ def registration_form():
 
     print("time(reg_form get started..): %s", time.time())
 
-    st.session_state.all_names = read_names()
+    # st.session_state.all_names = read_names()
     # selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
     selected_name = st.selectbox("Select a registered person (optional)", read_names())
     print("time(reg_form got selected_name): %s", time.time())
@@ -213,10 +213,10 @@ def registration_form():
     position_list = read_positions()
     print("time(reg_form got position_list): %s", time.time())
 
-    is_update = False
+    is_update = False  # Will do updating if true else do adding
     if selected_name:
         words = selected_name.split()
-        print('select:', words)
+        print('select guest:', words)
 
         selected_first_name = words[0]
         selected_last_name = ' '.join(words[1:])
@@ -249,8 +249,6 @@ def registration_form():
                 #    food_selected_idx = 0
 
                 print("time(reg_form found cell with selected name): %s", time.time())
-    else:
-        is_update = False  # add new
 
     detail_txt = '<p style="color:White;">Details of selected person:</p>'
     st.markdown(detail_txt, unsafe_allow_html=True)
@@ -258,7 +256,9 @@ def registration_form():
     # Assuming the sheet has columns: 'Name', 'Age', 'Email'
     with st.form(key="data_form", clear_on_submit=True):
         first_name = st.text_input('Enter your first name *', value=first_name)
+        first_name = first_name.strip()
         last_name = st.text_input('Enter your last name *', value=last_name)
+        last_name = last_name.strip()
         phone = st.text_input('Enter your phone number', value=phone)
         email = st.text_input('Enter your email', value=email)
         position = st.selectbox('Enter your position', position_list, index=position_idx)
@@ -282,7 +282,7 @@ def registration_form():
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
 
-                st.session_state.all_names = read_names()
+                # st.session_state.all_names = read_names()
                 st.rerun()  # Force rerun to refresh the selectbox
             else:
                 st.error("Please fill out the form correctly.")
