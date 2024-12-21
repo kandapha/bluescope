@@ -157,9 +157,10 @@ def update_data(row_index, regis_data):
     gsheet_participants.update_cell(row_index, 6, regis_data[5])  # timestamp
 
     # Clear cache
-    read_cell.clear()
+    for i in range(1, 7):
+        read_cell.clear(row_index, i)
     read_col.clear()
-    read_row.clear()
+    read_row.clear(row_index)
     read_names.clear()
 
 
@@ -168,9 +169,9 @@ def add_data(regis_data):
     gsheet_participants.append_row(regis_data)  # Append the row to the Google Sheet
 
     # Clear cache
-    read_cell.clear()
+    # read_cell.clear()
     read_col.clear()
-    read_row.clear()
+    # read_row.clear()
     read_names.clear()
 
 
