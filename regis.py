@@ -5,40 +5,11 @@ import pandas as pd
 from datetime import datetime
 import time
 import base64
+from threading import Lock
 
 
 logo_image = 'images/logo_2.png'
 background_image = 'images/background_resize.png'
-
-# Initialize variables for form inputs
-# position_list = [
-#     'Position',
-#     'กรรมการผู้จัดการ',
-#     'กรรมการบริหาร',
-#     'ที่ปรึกษาอาวุโส',
-#     'ผู้เชี่ยวชาญด้านโบราณคดี',
-#     'Admin',
-#     'Architect',
-#     'Associate director',
-#     'Cad options',
-#     'Draft man',
-#     'Engineer',
-#     'Interior',
-#     'Landscape',
-#     'Production',
-#     'Secretary',
-#     'Senior Architect',
-#     'Draftsman',
-#     'Senior landscape architect',
-#     'Landscape',
-#     'Landscape Designer',
-#     'Associate director',
-#     'Cad Options',
-#     'Production',
-#     'Site Supervisor',
-#     'Design Manager',
-#     'Other'
-# ]
 
 
 # st.logo('logo.png')
@@ -69,7 +40,7 @@ set_background_hack(background_image)
 
 
 # Connect to the Google Sheet
-def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):  # Authenticate and connect to Google Sheets
+def connect_to_gsheet(creds_json, spreadsheet_name):  # Authenticate and connect to Google Sheets
     scope = ["https://spreadsheets.google.com/feeds",
              'https://www.googleapis.com/auth/spreadsheets',
              "https://www.googleapis.com/auth/drive.file",
@@ -78,13 +49,19 @@ def connect_to_gsheet(creds_json, spreadsheet_name, sheet_name):  # Authenticate
     credentials = ServiceAccountCredentials.from_json_keyfile_name(creds_json, scope)
     client = gspread.authorize(credentials)
     spreadsheet = client.open(spreadsheet_name)
-    return spreadsheet.worksheet(sheet_name)  # Access specific sheet by name
+    return spreadsheet
 
 
 SPREADSHEET_NAME = 'bluescope_registration_file'
 CREDENTIALS_FILE = './credentials.json'  # Google Sheet credentials and details
-gsheet_participants = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name='participants')
-gsheet_positions = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME, sheet_name='positions')
+if 'gsheet' not in st.session_state:
+    st.session_state.gsheet = connect_to_gsheet(CREDENTIALS_FILE, SPREADSHEET_NAME)
+# if 'gsheet_participants' not in st.session_state:
+#     st.session_state.gsheet_participants = st.session_state.gsheet.worksheet('participants')
+gsheet_participants = st.session_state.gsheet.worksheet('participants')
+# if 'gsheet_positions' not in st.session_state:
+#     st.session_state.gsheet_positions = st.session_state.gsheet.worksheet('positions')
+gsheet_positions = st.session_state.gsheet.worksheet('positions')
 
 
 # Safe lite to prevent accessing a missing item
@@ -97,68 +74,103 @@ class safelist(list):
 
 
 # Read cell data
+read_cell_lock = Lock()
+
 @st.cache_data
 def read_cell(row, col):
-    return gsheet_participants.cell(row, col).value
+    with read_cell_lock: return gsheet_participants.cell(row, col).value
 
 
 # Read row data
+read_row_lock = Lock()
+
 @st.cache_data
 def read_row(row):
-    return gsheet_participants.row_values(row)
+    with read_row_lock: return gsheet_participants.row_values(row)
 
 
 # Read col data
+read_col_lock = Lock()
+
 @st.cache_data
 def read_col(col):
-    return gsheet_participants.col_values(col)
+    with read_col_lock: return gsheet_participants.col_values(col)
 
 
 # Read full-name
-@st.cache_resource
+read_names_lock = Lock()
+
+@st.cache_data
 def read_names():
-    first_names = gsheet_participants.col_values(1)[1:]
-    last_names = gsheet_participants.col_values(2)[1:]
+    with read_names_lock:
+        first_names = read_col(1)[1:]
+        last_names = read_col(2)[1:]
 
-    # FIXME: Should no one missing name or surname since submission
-    if len(first_names) > len(last_names):
-        last_names += [''] * (len(first_names) - len(last_names))
-    if len(first_names) < len(last_names):
-        first_names += [''] * (len(last_names) - len(first_names))
+        # FIXME: Should no missing name or surname since submission
+        if len(first_names) > len(last_names):
+            last_names += [''] * (len(first_names) - len(last_names))
+        if len(first_names) < len(last_names):
+            first_names += [''] * (len(last_names) - len(first_names))
 
-    df = pd.DataFrame()
-    df['first_name'] = first_names
-    df['last_name'] = last_names
-    unique_names_df = df[['first_name', 'last_name']].drop_duplicates()
-    unique_names_list = list(unique_names_df.itertuples(index=False, name=None))
-    return sorted([''] + [' '.join(i) for i in unique_names_list])
+        df = pd.DataFrame()
+        df['first_name'] = first_names
+        df['last_name'] = last_names
+        unique_names_df = df[['first_name', 'last_name']].drop_duplicates()
+        unique_names_list = list(unique_names_df.itertuples(index=False, name=None))  # Make list of tuples
+        return sorted([''] + [' '.join(i) for i in unique_names_list])  # Cancatenate names+surnames, and, lead them with blank item
 
 
 # Read positions
-@st.cache_resource
+# Its cache can be cleared with 'c' key
+@st.cache_data
 def read_positions():
     print('Press C button for clearing cache, then ctrl-r for refreshing the browser')
     return gsheet_positions.col_values(1)
 
 
 # Update data
-def update_data(update_row, regis_data):
-    gsheet_participants.update_cell(update_row, 1, regis_data[0].strip())
-    gsheet_participants.update_cell(update_row, 2, regis_data[1].strip())
-    gsheet_participants.update_cell(update_row, 3, regis_data[2])
-    gsheet_participants.update_cell(update_row, 4, regis_data[3])
-    gsheet_participants.update_cell(update_row, 5, regis_data[4])
-    # gsheet_participants.update_cell(update_row, 6, regis_data[5])
-    # gsheet_participants.update_cell(update_row, 7, regis_data[6])
-    # gsheet_participants.update_cell(update_row, 8, regis_data[7])
-    # gsheet_participants.update_cell(update_row, 9, regis_data[8])
-    gsheet_participants.update_cell(update_row, 6, regis_data[5])
+def update_data(row_index, regis_data):
+
+    # gsheet_participants.update_cell(row_index, 1, regis_data[0])  # first_name
+    # gsheet_participants.update_cell(row_index, 2, regis_data[1])  # last_name
+    # gsheet_participants.update_cell(row_index, 3, regis_data[2])  # phone
+    # gsheet_participants.update_cell(row_index, 4, regis_data[3])  # email
+    # gsheet_participants.update_cell(row_index, 5, regis_data[4])  # position
+    # gsheet_participants.update_cell(row_index, 6, regis_data[5])  # timestamp
+
+    def column_number_to_letter(column):
+        result = ''
+        while column > 0:
+            column, remainder = divmod(column - 1, 26)
+            result = chr(remainder + 65) + result
+        return result
+
+    values = [
+        # ["Product", "Price", "Quantity"],
+        # ["Apples", 1.2, 10],
+        # ["Oranges", 0.8, 15],
+        # ["Bananas", 0.5, 20],
+        regis_data,
+    ]
+    num_rows = len(values)
+    num_cols = len(values[0])
+    start_row = row_index
+    start_col = 1
+
+    start_cell = f'{column_number_to_letter(start_col)}{start_row}'
+    end_cell = f'{column_number_to_letter(start_col + num_cols - 1)}{start_row + num_rows - 1}'
+    range_to_update = f'{start_cell}:{end_cell}'
+
+    gsheet_participants.update(range_to_update, values)
 
     # Clear cache
-    read_cell.clear()
-    read_col.clear()
-    read_row.clear()
-    read_names.clear()
+    with read_cell_lock:
+        for i in range(1, 7):
+            read_cell.clear(row_index, i)
+
+    with read_col_lock: read_col.clear()
+    with read_row_lock: read_row.clear(row_index)
+    with read_names_lock: read_names.clear()
 
 
 # Add data to Google Sheets
@@ -166,10 +178,10 @@ def add_data(regis_data):
     gsheet_participants.append_row(regis_data)  # Append the row to the Google Sheet
 
     # Clear cache
-    read_cell.clear()
-    read_col.clear()
-    read_row.clear()
-    read_names.clear()
+    # read_cell.clear()
+    with read_col_lock: read_col.clear()
+    # read_row.clear()
+    with read_names_lock: read_names.clear()
 
 
 # Read data from Google Sheets
@@ -205,7 +217,7 @@ def registration_form():
 
     print("time(reg_form get started..): %s", time.time())
 
-    st.session_state.all_names = read_names()
+    # st.session_state.all_names = read_names()
     # selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
     selected_name = st.selectbox("Select a registered person (optional)", read_names())
     print("time(reg_form got selected_name): %s", time.time())
@@ -213,10 +225,10 @@ def registration_form():
     position_list = read_positions()
     print("time(reg_form got position_list): %s", time.time())
 
-    is_update = False
+    is_update = False  # Will do updating if true else do adding
     if selected_name:
         words = selected_name.split()
-        print('select:', words)
+        print('selected guest:', words)
 
         selected_first_name = words[0]
         selected_last_name = ' '.join(words[1:])
@@ -249,40 +261,39 @@ def registration_form():
                 #    food_selected_idx = 0
 
                 print("time(reg_form found cell with selected name): %s", time.time())
-    else:
-        is_update = False  # add new
 
     detail_txt = '<p style="color:White;">Details of selected person:</p>'
     st.markdown(detail_txt, unsafe_allow_html=True)
 
     # Assuming the sheet has columns: 'Name', 'Age', 'Email'
     with st.form(key="data_form", clear_on_submit=True):
-        first_name = st.text_input('Enter your first name *', value=first_name)
-        last_name = st.text_input('Enter your last name *', value=last_name)
-        phone = st.text_input('Enter your phone number', value=phone)
-        email = st.text_input('Enter your email', value=email)
-        position = st.selectbox('Enter your position', position_list, index=position_idx)
+        first_name  = st.text_input('Enter your first name *', value=first_name).strip()
+        last_name   = st.text_input('Enter your last name *', value=last_name).strip()
+        phone       = st.text_input('Enter your phone number', value=phone)
+        email       = st.text_input('Enter your email', value=email)
+        position    = st.selectbox('Enter your position', position_list, index=position_idx)
         # food_allergy = st.checkbox("Food Allergy", value=is_allergy)
         # text_food_allergy = st.text_input('Enter your allergy:', value=text_food_allergy)
         # food_selected = st.radio("Select your meal", food_list, index=food_selected_idx)
 
         # Submit button inside the form
         submitted = st.form_submit_button("Submit")
+
         # Handle form submission
         if submitted:
             timestamp = datetime.now()
-            # regis_data = [fname, lname, str(phone), email, position, food_allergy, text_food_allergy, food_selected, str(timestamp)]
             regis_data = [first_name, last_name, str(phone), email, position, timestamp.strftime("%d/%m/%Y, %H:%M:%S")]
             print('submit:', regis_data)
 
             if first_name and last_name:  # Basic validation to check if required fields are filled
                 if is_update:
                     update_data(found_row_index, regis_data)
+                    st.success("Data updated!")
                 else:
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
 
-                st.session_state.all_names = read_names()
+                # st.session_state.all_names = read_names()
                 st.rerun()  # Force rerun to refresh the selectbox
             else:
                 st.error("Please fill out the form correctly.")
