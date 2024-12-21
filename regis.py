@@ -217,9 +217,8 @@ def registration_form():
 
     print("time(reg_form get started..): %s", time.time())
 
-    # st.session_state.all_names = read_names()
-    # selected_name = st.selectbox("Select a registered person (optional)", st.session_state.all_names)
-    selected_name = st.selectbox("Select a registered person (optional)", read_names())
+    st.session_state['selected_fullname'] = st.selectbox("Select a registered person (optional)", read_names())
+    selected_name = st.session_state['selected_fullname']
     print("time(reg_form got selected_name): %s", time.time())
 
     position_list = read_positions()
