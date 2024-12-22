@@ -131,6 +131,7 @@ def read_positions():
 # Update data
 def update_data(row_index, regis_data):
 
+    ## Old method to update data
     # gsheet_participants.update_cell(row_index, 1, regis_data[0])  # first_name
     # gsheet_participants.update_cell(row_index, 2, regis_data[1])  # last_name
     # gsheet_participants.update_cell(row_index, 3, regis_data[2])  # phone
@@ -138,6 +139,7 @@ def update_data(row_index, regis_data):
     # gsheet_participants.update_cell(row_index, 5, regis_data[4])  # position
     # gsheet_participants.update_cell(row_index, 6, regis_data[5])  # timestamp
 
+    ## New method to update data
     def column_number_to_letter(column):
         result = ''
         while column > 0:
@@ -163,7 +165,7 @@ def update_data(row_index, regis_data):
 
     gsheet_participants.update(range_to_update, values)
 
-    # Clear cache
+    ## Clear cache
     with read_cell_lock:
         for i in range(1, 7):
             read_cell.clear(row_index, i)
@@ -177,7 +179,7 @@ def update_data(row_index, regis_data):
 def add_data(regis_data):
     gsheet_participants.append_row(regis_data)  # Append the row to the Google Sheet
 
-    # Clear cache
+    ## Clear cache
     # read_cell.clear()
     with read_col_lock: read_col.clear()
     # read_row.clear()
@@ -206,24 +208,21 @@ def registration_form():
         unsafe_allow_html=True
     )
 
-    # food_list = ['Meat','Pork']
-    first_name = ""
-    last_name = ""
-    phone = ""
-    email = ""
-    position_idx = 0
-    # food_selected_idx = 0
-    found_row_index = 0
+    first_name      = '' if 'first_name'    not in st.session_state else st.session_state.first_name
+    last_name       = '' if 'last_name'     not in st.session_state else st.session_state.last_name
+    phone           = '' if 'phone'         not in st.session_state else st.session_state.phone
+    email           = '' if 'email'         not in st.session_state else st.session_state.email
+    position_idx    = 0 if 'position_idx'   not in st.session_state else st.session_state.position_idx
+    found_row_index = 0 if 'found_row_index' not in st.session_state else st.session_state.found_row_index
 
     print("time(reg_form get started..): %s", time.time())
 
     # Provide a selectbox to choose a registered person
     fullnames = read_names()
-    selected_index = 0 if 'selected_fullname' not in st.session_state else \
-                     fullnames.index(st.session_state.selected_fullname)
     selected_fullname = st.selectbox("Select a registered person (optional)",
                                      options=fullnames,
-                                     index=selected_index)
+                                     index=0 if 'selected_fullname' not in st.session_state else
+                                           fullnames.index(st.session_state.selected_fullname))
     st.session_state.selected_fullname = selected_fullname
     print("time(reg_form got selected_name): %s", time.time())
 
@@ -265,6 +264,13 @@ def registration_form():
                 # except ValueError:
                 #    food_selected_idx = 0
 
+                st.session_state['first_name']      = first_name
+                st.session_state['last_name']       = last_name
+                st.session_state['phone']           = phone
+                st.session_state['email']           = email
+                st.session_state['position_idx']    = position_idx
+                st.session_state['found_row_index'] = found_row_index
+
                 print("time(reg_form found cell with selected name): %s", time.time())
 
     detail_txt = '<p style="color:White;">Details of selected person:</p>'
@@ -273,10 +279,10 @@ def registration_form():
     # Form to enter registration details
     with st.form(key="data_form", clear_on_submit=True):  # Assume the sheet has columns: 'Name', 'Age', 'Email'
         first_name  = st.text_input('Enter your first name *', value=first_name).strip()
-        last_name   = st.text_input('Enter your last name *', value=last_name).strip()
+        last_name   = st.text_input('Enter your last name *',  value=last_name).strip()
         phone       = st.text_input('Enter your phone number', value=phone)
-        email       = st.text_input('Enter your email', value=email)
-        position    = st.selectbox('Enter your position', position_list, index=position_idx)
+        email       = st.text_input('Enter your email',        value=email)
+        position    = st.selectbox('Enter your position', options=position_list, index=position_idx)
         # food_allergy = st.checkbox("Food Allergy", value=is_allergy)
         # text_food_allergy = st.text_input('Enter your allergy:', value=text_food_allergy)
         # food_selected = st.radio("Select your meal", food_list, index=food_selected_idx)
@@ -298,8 +304,15 @@ def registration_form():
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
 
+                st.session_state['first_name']      = first_name
+                st.session_state['last_name']       = last_name
+                st.session_state['phone']           = phone
+                st.session_state['email']           = email
+                st.session_state['position_idx']    = position_idx
+                st.session_state['found_row_index'] = found_row_index
+
                 st.session_state.selected_fullname = f'{first_name} {last_name}'
-                st.rerun()  # Force rerun to refresh the selectbox
+                st.rerun(scope='fragment')  # Force rerun to refresh the selectbox
             else:
                 st.error("Please fill out the form correctly.")
                 st.error("If you want to leave either the first name or last name empty, please fill it with a \"-\" symbol")
