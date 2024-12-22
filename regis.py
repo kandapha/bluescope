@@ -219,23 +219,16 @@ def registration_form():
 
     # Provide a selectbox to choose a registered person
     fullnames = read_names()
-
-    def update_selected_index():
-        print(f'added_fullname: {st.session_state.get("added_fullname", None)}')
-        if st.session_state.get('added_fullname', None):
-            st.session_state['selected_index'] = fullnames.index(st.session_state.added_fullname)
-            st.session_state['added_fullname'] = None
-        else:
-            fullname = st.session_state.get('selected_fullname', None)
-            st.session_state['selected_index'] = fullnames.index(fullname) if fullname else None
-        print(f'selected_index: {st.session_state.get("selected_index", None)}')
-
+    selected_index = None
+    if st.session_state.get('added_fullname', None):
+        # TODO: if needed to select the last added person
+        # selected_index = fullnames.index(st.session_state['added_fullname'])
+        st.session_state['added_fullname'] = None
     selected_fullname = st.selectbox('Select a registered person (optional)',
                                      options=fullnames,
-                                     index=st.session_state.get('selected_index', None),
-                                     key='selected_fullname',
-                                     on_change=update_selected_index)
-    print(f'time(reg_form got selected_fullname): {selected_fullname} {st.session_state.get("selected_index", None)} @{time.time()}')
+                                     index=selected_index,
+                                     )
+    print(f'time(reg_form got selected_fullname): {selected_fullname} @{time.time()}')
 
     position_list = read_positions()
     print(f'time(reg_form got position_list): @{time.time()}')
