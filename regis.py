@@ -217,16 +217,22 @@ def registration_form():
 
     print("time(reg_form get started..): %s", time.time())
 
-    st.session_state['selected_fullname'] = st.selectbox("Select a registered person (optional)", read_names())
-    selected_name = st.session_state['selected_fullname']
+    # Provide a selectbox to choose a registered person
+    fullnames = read_names()
+    selected_index = 0 if 'selected_fullname' not in st.session_state else \
+                     fullnames.index(st.session_state.selected_fullname)
+    selected_fullname = st.selectbox("Select a registered person (optional)",
+                                     options=fullnames,
+                                     index=selected_index)
+    st.session_state.selected_fullname = selected_fullname
     print("time(reg_form got selected_name): %s", time.time())
 
     position_list = read_positions()
     print("time(reg_form got position_list): %s", time.time())
 
     is_update = False  # Will do updating if true else do adding
-    if selected_name:
-        words = selected_name.split()
+    if selected_fullname:
+        words = selected_fullname.split()
         print('selected guest:', words)
 
         selected_first_name = words[0]
@@ -264,8 +270,8 @@ def registration_form():
     detail_txt = '<p style="color:White;">Details of selected person:</p>'
     st.markdown(detail_txt, unsafe_allow_html=True)
 
-    # Assuming the sheet has columns: 'Name', 'Age', 'Email'
-    with st.form(key="data_form", clear_on_submit=True):
+    # Form to enter registration details
+    with st.form(key="data_form", clear_on_submit=True):  # Assume the sheet has columns: 'Name', 'Age', 'Email'
         first_name  = st.text_input('Enter your first name *', value=first_name).strip()
         last_name   = st.text_input('Enter your last name *', value=last_name).strip()
         phone       = st.text_input('Enter your phone number', value=phone)
@@ -292,7 +298,7 @@ def registration_form():
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
 
-                # st.session_state.all_names = read_names()
+                st.session_state.selected_fullname = f'{first_name} {last_name}'
                 st.rerun()  # Force rerun to refresh the selectbox
             else:
                 st.error("Please fill out the form correctly.")
