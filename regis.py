@@ -219,11 +219,23 @@ def registration_form():
 
     # Provide a selectbox to choose a registered person
     fullnames = read_names()
+
+    def update_selected_index():
+        print(f'added_fullname: {st.session_state.get("added_fullname", None)}')
+        if st.session_state.get('added_fullname', None):
+            st.session_state['selected_index'] = fullnames.index(st.session_state.added_fullname)
+            st.session_state['added_fullname'] = None
+        else:
+            fullname = st.session_state.get('selected_fullname', None)
+            st.session_state['selected_index'] = fullnames.index(fullname) if fullname else None
+        print(f'selected_index: {st.session_state.get("selected_index", None)}')
+
     selected_fullname = st.selectbox('Select a registered person (optional)',
                                      options=fullnames,
-                                     index=0 if 'selected_fullname' not in st.session_state else
-                                           fullnames.index(st.session_state.selected_fullname))
-    print(f'time(reg_form got selected_fullname): {selected_fullname} @{time.time()}')
+                                     index=st.session_state.get('selected_index', None),
+                                     key='selected_fullname',
+                                     on_change=update_selected_index)
+    print(f'time(reg_form got selected_fullname): {selected_fullname} {st.session_state.get("selected_index", None)} @{time.time()}')
 
     position_list = read_positions()
     print(f'time(reg_form got position_list): @{time.time()}')
@@ -269,9 +281,9 @@ def registration_form():
                 st.session_state['email']           = email
                 st.session_state['position_idx']    = position_idx
                 st.session_state['found_row_index'] = found_row_index
-                st.session_state['selected_fullname'] = f'{first_name} {last_name}'
+                st.session_state['added_fullname'] = None
 
-                print(f'time(reg_form found cell with selected name): {st.session_state.selected_fullname} @{time.time()}')
+                print(f'time(reg_form found cell with selected name): {selected_fullname} @{time.time()}')
 
     detail_txt = '<p style="color:White;">Details of selected person:</p>'
     st.markdown(detail_txt, unsafe_allow_html=True)
@@ -312,8 +324,9 @@ def registration_form():
                 st.session_state['email']           = email
                 st.session_state['position_idx']    = position_idx
                 st.session_state['found_row_index'] = found_row_index
-                st.session_state['selected_fullname'] = f'{first_name} {last_name}'
-                st.rerun(scope='fragment')  # Force rerun to refresh the selectbox
+                st.session_state['added_fullname'] = f'{first_name} {last_name}'
+                # st.rerun(scope='fragment')  # Force rerun to refresh the selectbox
+                st.rerun()  # Force rerun to refresh the selectbox
             else:
                 st.error("Please fill out the form correctly.")
                 st.error("If you want to leave either the first name or last name empty, please fill it with a \"-\" symbol")
