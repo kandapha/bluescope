@@ -212,8 +212,8 @@ def registration_form():
     last_name       = '' if 'last_name'     not in st.session_state else st.session_state.last_name
     phone           = '' if 'phone'         not in st.session_state else st.session_state.phone
     email           = '' if 'email'         not in st.session_state else st.session_state.email
-    position_idx    = 0 if 'position_idx'   not in st.session_state else st.session_state.position_idx
-    found_row_index = 0 if 'found_row_index' not in st.session_state else st.session_state.found_row_index
+    position_idx    = 0  if 'position_idx'  not in st.session_state else st.session_state.position_idx
+    found_row_index = 0  if 'found_row_index' not in st.session_state else st.session_state.found_row_index
 
     print(f'time(reg_form get started..): @{time.time()}')
 
@@ -226,8 +226,7 @@ def registration_form():
         st.session_state['added_fullname'] = None
     selected_fullname = st.selectbox('Select a registered person (optional)',
                                      options=fullnames,
-                                     index=selected_index,
-                                     )
+                                     index=selected_index,)
     print(f'time(reg_form got selected_fullname): {selected_fullname} @{time.time()}')
 
     position_list = read_positions()
@@ -274,7 +273,6 @@ def registration_form():
                 st.session_state['email']           = email
                 st.session_state['position_idx']    = position_idx
                 st.session_state['found_row_index'] = found_row_index
-                st.session_state['added_fullname'] = None
 
                 print(f'time(reg_form found cell with selected name): {selected_fullname} @{time.time()}')
 
@@ -306,10 +304,15 @@ def registration_form():
                     update_data(found_row_index, regis_data)
                     st.success(f'Data updated!')
                     print(f'Data updated! @row:{found_row_index} with {regis_data}')
+                    st.session_state['added_fullname'] = None
                 else:
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
                     print(f'Data added! with {regis_data}')
+                    # Clear the form after submission
+                    first_name = last_name = phone = email = ''
+                    position_idx = 0 
+                    st.session_state['added_fullname'] = f'{first_name} {last_name}'
 
                 st.session_state['first_name']      = first_name
                 st.session_state['last_name']       = last_name
@@ -317,7 +320,6 @@ def registration_form():
                 st.session_state['email']           = email
                 st.session_state['position_idx']    = position_idx
                 st.session_state['found_row_index'] = found_row_index
-                st.session_state['added_fullname'] = f'{first_name} {last_name}'
                 # st.rerun(scope='fragment')  # Force rerun to refresh the selectbox
                 st.rerun()  # Force rerun to refresh the selectbox
             else:
