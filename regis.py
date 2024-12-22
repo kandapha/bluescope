@@ -215,19 +215,18 @@ def registration_form():
     position_idx    = 0 if 'position_idx'   not in st.session_state else st.session_state.position_idx
     found_row_index = 0 if 'found_row_index' not in st.session_state else st.session_state.found_row_index
 
-    print("time(reg_form get started..): %s", time.time())
+    print(f'time(reg_form get started..): @{time.time()}')
 
     # Provide a selectbox to choose a registered person
     fullnames = read_names()
-    selected_fullname = st.selectbox("Select a registered person (optional)",
+    selected_fullname = st.selectbox('Select a registered person (optional)',
                                      options=fullnames,
                                      index=0 if 'selected_fullname' not in st.session_state else
                                            fullnames.index(st.session_state.selected_fullname))
-    st.session_state.selected_fullname = selected_fullname
-    print("time(reg_form got selected_name): %s", time.time())
+    print(f'time(reg_form got selected_fullname): {selected_fullname} @{time.time()}')
 
     position_list = read_positions()
-    print("time(reg_form got position_list): %s", time.time())
+    print(f'time(reg_form got position_list): @{time.time()}')
 
     is_update = False  # Will do updating if true else do adding
     if selected_fullname:
@@ -238,10 +237,10 @@ def registration_form():
         selected_last_name = ' '.join(words[1:])
 
         for found_row_index, found_cell in [ (i+1, n) for i, n in enumerate(read_col(1)) if n == selected_first_name ]:
-            print("time(reg_form yield cell containing selected_first_name): %s", time.time())
+            print(f'time(reg_form yield cell containing selected_first_name): {found_row_index} @{time.time()}')
 
             row = read_row(found_row_index)
-            print(f'read_row got {type(row)} len:{len(row)}')
+            # print(f'read_row got {type(row)} len:{len(row)}')
             row = safelist(row)
 
             found_last_name = row.get(1, '')
@@ -270,8 +269,9 @@ def registration_form():
                 st.session_state['email']           = email
                 st.session_state['position_idx']    = position_idx
                 st.session_state['found_row_index'] = found_row_index
+                st.session_state['selected_fullname'] = f'{first_name} {last_name}'
 
-                print("time(reg_form found cell with selected name): %s", time.time())
+                print(f'time(reg_form found cell with selected name): {st.session_state.selected_fullname} @{time.time()}')
 
     detail_txt = '<p style="color:White;">Details of selected person:</p>'
     st.markdown(detail_txt, unsafe_allow_html=True)
@@ -299,10 +299,12 @@ def registration_form():
             if first_name and last_name:  # Basic validation to check if required fields are filled
                 if is_update:
                     update_data(found_row_index, regis_data)
-                    st.success("Data updated!")
+                    st.success(f'Data updated!')
+                    print(f'Data updated! @row:{found_row_index} with {regis_data}')
                 else:
                     add_data(regis_data)  # Append the row to the sheet
                     st.success("Data added successfully!")
+                    print(f'Data added! with {regis_data}')
 
                 st.session_state['first_name']      = first_name
                 st.session_state['last_name']       = last_name
@@ -310,8 +312,7 @@ def registration_form():
                 st.session_state['email']           = email
                 st.session_state['position_idx']    = position_idx
                 st.session_state['found_row_index'] = found_row_index
-
-                st.session_state.selected_fullname = f'{first_name} {last_name}'
+                st.session_state['selected_fullname'] = f'{first_name} {last_name}'
                 st.rerun(scope='fragment')  # Force rerun to refresh the selectbox
             else:
                 st.error("Please fill out the form correctly.")
